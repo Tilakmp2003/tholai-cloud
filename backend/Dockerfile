@@ -17,6 +17,9 @@ COPY . .
 # If "npm run build" fails, the docker build will fail.
 # I'll check package.json again in a second. 
 # For now, writing the Dockerfile as requested but with the build deps I know are needed.
+# Generate prisma client (Required for build)
+RUN npx prisma generate
+
 RUN npm run build
 
 # 2. Production Stage
