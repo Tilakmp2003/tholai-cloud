@@ -26,7 +26,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 # Install git (Crucial for your GitIntegration feature)
-RUN apk add --no-cache git openssh-client
+RUN apk add --no-cache git openssh-client python3 make g++
 
 COPY package*.json ./
 # Install only production dependencies
