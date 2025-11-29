@@ -27,7 +27,7 @@ FROM node:20-alpine
 WORKDIR /app
 # Install git (Crucial for your GitIntegration feature) and build tools for native modules
 # Also install Chromium for Puppeteer to avoid downloading it (saves space)
-RUN apk add --no-cache git openssh-client python3 make g++ chromium
+RUN apk add --no-cache git openssh-client python3 make g++ chromium openssl
 
 # Tell Puppeteer to skip downloading Chrome and use the installed one
 ENV PUPPETEER_SKIP_DOWNLOAD=true
