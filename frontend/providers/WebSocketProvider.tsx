@@ -21,7 +21,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
-    const socketInstance = io('http://localhost:4000', {
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const socketInstance = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
     });
