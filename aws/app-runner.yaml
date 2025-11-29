@@ -1,0 +1,16 @@
+version: 1.0
+service:
+  name: life-changer-backend
+  source_configuration:
+    image_repository:
+      image_identifier: public.ecr.aws/aws-containers/hello-app-runner:latest # Placeholder, will be replaced by ECR image
+      image_configuration:
+        port: 3001
+        runtime_environment_variables:
+          NODE_ENV: production
+          DATABASE_URL: ${DATABASE_URL} # Set in App Runner console
+          REDIS_URL: ${REDIS_URL}       # Set in App Runner console
+      image_repository_type: ECR
+  instance_configuration:
+    cpu: "1 vCPU"
+    memory: "2 GB"

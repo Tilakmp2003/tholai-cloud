@@ -1,0 +1,420 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  clientName  String
+  description String?  // PRD / Requirements text
+  domain      String?  // "E_COMMERCE", "BANKING", "SAAS", "INTERNAL_TOOL"
+  status      ProjectStatus @default(PLANNED)
+  
+  // Phase 6: Live Preview Workspace
+  workspacePath   String?   // e.g. "workspaces/e-commerce-platform"
+  devPort         Int?      // e.g. 4100
+  previewStatus   String    @default("STOPPED") // STOPPED, READY, RUNNING
+
+  // Claim 4: Elastic Hierarchy Routing
+  complexityScore Int       @default(50) // 0-100 (0=Trivial, 100=Impossible)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  modules     Module[]
+  repo        Repo?
+}
+
+// Claim 3: Immutable Context Artifacts (Vector DB Persistence)
+// Claim 3: Immutable Context Artifacts (Vector DB Persistence)
+model Artifact {
+  id         String   @id @default(uuid())
+  taskId     String?
+  task       Task?    @relation(fields: [taskId], references: [id])
+  path       String?  // path relative in project
+  content    String   // The actual text content (or use storageUrl for S3)
+  storageUrl String?  // S3 or object store URL (optional if content is small)
+  hash       String   // SHA-256 Signature for Merkle Seal
+  createdAt  DateTime @default(now())
+}
+
+model Module {
+  id           String   @id @default(uuid())
+  name         String
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id])
+  ownerAgentId String?
+  ownerAgent   Agent?   @relation(fields: [ownerAgentId], references: [id])
+  status       ModuleStatus @default(PLANNED)
+  tasks        Task[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Agent {
+  id             String   @id @default(uuid())
+  role           String
+  specialization String
+  status         AgentStatus @default(IDLE)
+  currentTaskId  String?
+  
+  // Phase 3: Agent Performance Tracking
+  failCount      Int      @default(0)
+  successCount   Int      @default(0)
+  lastActiveAt   DateTime?
+  
+  // Phase 4: Governance & Scoring
+  score          Float    @default(0)
+  riskLevel      AgentRiskLevel @default(LOW)
+  
+  // Claim 2: Economic Circuit Breaker
+  costBaseline   Float    @default(0.05) // Average cost per task for this role
+  sessionCost    Float    @default(0.0)  // Current running cost
+  
+  // Multi-Provider LLM: Model configuration
+  modelConfig    Json?    // { provider, model, maxTokens, temperature }
+  
+  modules        Module[]
+  tasks          Task[]
+  
+  // Phase 3: Escalation Relations
+  sentRequests     ContextRequest[] @relation("FromAgent")
+  receivedRequests ContextRequest[] @relation("ToAgent")
+  taskMetrics      TaskMetrics[]
+  
+  // Phase 4: Governance Relations
+  performanceLogs  AgentPerformanceLog[]
+  governanceEvents GovernanceEvent[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ... (existing models)
+
+// Enterprise-Grade Enhancements
+model ADR {
+  id           String   @id @default(uuid())
+  projectId    String
+  title        String
+  authorAgent  String?
+  createdAt    DateTime @default(now())
+  markdown     String   @db.Text
+  mermaidDiagram String? @db.Text
+  metadata     Json?
+}
+
+model Proposal {
+  id          String   @id @default(uuid())
+  projectId   String
+  authorAgent String?
+  type        String   // CONSERVATIVE | BALANCED | BOLD
+  adrId       String?  
+  costEstimate Decimal? @db.Decimal
+  createdAt   DateTime @default(now())
+  approved    Boolean  @default(false)
+}
+
+model DesignPackage {
+  id          String   @id @default(uuid())
+  projectId   String
+  artifactRef String   // "artifact://DP-uuid/designPackage.json"
+  metadata    Json?
+  createdAt   DateTime @default(now())
+}
+
+// Updated Task Model
+model Task {
+  id                String   @id @default(uuid())
+  moduleId          String
+  module            Module   @relation(fields: [moduleId], references: [id])
+  title             String
+  requiredRole      String
+  status            TaskStatus @default(QUEUED)
+  contextPacket     Json?
+  assignedToAgentId String?
+  assignedToAgent   Agent?   @relation(fields: [assignedToAgentId], references: [id])
+  
+  result            Json?
+  errorMessage      String?
+  traceId           String?
+  reviewFeedback    Json?
+  
+  // Phase 3: Revision Limits
+  retryCount        Int      @default(0) // Claim 1: Deadlock Trigger
+  isDeadlocked      Boolean  @default(false) // Claim 1: War Room Flag
+  revisionCount     Int      @default(0)
+  maxRevisions      Int      @default(3)
+  
+  // Phase 3: Context Management
+  contextVersion    Int      @default(1)
+  blockedReason     String?
+  lastAgentMessage  String?
+
+  // Claim 5: Targeted Repair & Reassignment
+  files             Json?    // [{ path, artifactId?, sha256 }]
+  failedFiles       Json?    // ["path/to/file1", "path/to/file2"]
+  repairScope       Json?    // { files: ["..."], instruction: "..." }
+  lastFailureReason String?
+  
+  // Enterprise-Grade Enhancements
+  designContext     Json?    // includes { proposalId, adrId, mermaid, rationale }
+  proposalId        String?  // direct link to Proposal
+  adrId             String?  // direct link to ADR
+  outputArtifact    String?  @db.Text
+  relatedFileName   String?
+  qaFeedback        String?  @db.Text
+
+  // Smarter Agents: Sticky Ownership & Review
+  ownerAgentId      String?    // Sticky owner (who created / last completed)
+  lastReviewBy      String?
+  lastReviewAt      DateTime?
+  reviewDecision    String?    // APPROVED | CHANGES_REQUESTED | ESCALATED
+  // reviewFeedback already defined above
+  history           Json?      // array of previous attempts (artifact refs)
+  
+  // Phase 3: Relations
+  contextRequests   ContextRequest[]
+  metrics           TaskMetrics[]
+  artifacts         Artifact[]
+  
+  // Phase 4: Governance Relations
+  performanceLogs   AgentPerformanceLog[]
+  governanceEvents  GovernanceEvent[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ... (rest of the file)
+
+model AllocationLog {
+  id              String   @id @default(uuid())
+  projectId       String
+  traceId         String?
+  featureCount    Int
+  complexityScore Int
+  workflowsPerHour Int
+  composition     Json     // Stored as JSON object
+  estimatedCostUsd Float
+  createdAt       DateTime @default(now())
+}
+
+model Trace {
+  id        String   @id @default(uuid())
+  taskId    String
+  agentId   String
+  event     String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+// Phase 3: Context Escalation System
+model ContextRequest {
+  id          String            @id @default(uuid())
+  taskId      String
+  task        Task              @relation(fields: [taskId], references: [id])
+  fromAgentId String
+  fromAgent   Agent             @relation("FromAgent", fields: [fromAgentId], references: [id])
+  toAgentId   String
+  toAgent     Agent             @relation("ToAgent", fields: [toAgentId], references: [id])
+  
+  issueType   IssueType
+  message     String
+  resolution  String?
+  status      EscalationStatus  @default(OPEN)
+  
+  createdAt   DateTime          @default(now())
+  resolvedAt  DateTime?
+}
+
+// Phase 3: Performance & Cost Metrics
+model TaskMetrics {
+  id              String    @id @default(uuid())
+  taskId          String
+  task            Task      @relation(fields: [taskId], references: [id])
+  agentId         String
+  agent           Agent     @relation(fields: [agentId], references: [id])
+  
+  executionTimeMs Int?
+  tokensIn        Int?
+  tokensOut       Int?
+  costUsd         Float?
+  
+  modelUsed       String?
+  retries         Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+}
+
+// Phase 4: Agent Performance Logging
+model AgentPerformanceLog {
+  id        String   @id @default(uuid())
+  
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id])
+  
+  // Outcome
+  success       Boolean
+  failureReason String?
+  
+  // Cost / Performance
+  costUsd       Float?
+  tokensIn      Int?
+  tokensOut     Int?
+  durationMs    Int?
+  revisionCount Int?
+  
+  createdAt DateTime @default(now())
+}
+
+// Phase 4: Governance Event Logging
+model GovernanceEvent {
+  id        String           @id @default(uuid())
+  
+  agentId   String
+  agent     Agent            @relation(fields: [agentId], references: [id])
+  
+  taskId    String?
+  task      Task?            @relation(fields: [taskId], references: [id])
+  
+  action    GovernanceAction
+  reason    String
+  
+  // Track role changes
+  previousRole String?
+  newRole      String?
+  
+  createdAt DateTime @default(now())
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+}
+
+enum ModuleStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum AgentStatus {
+  IDLE
+  BUSY
+  OFFLINE
+}
+
+enum TaskStatus {
+  QUEUED
+  ASSIGNED
+  IN_PROGRESS
+  IN_REVIEW
+  PENDING_TESTS
+  IN_QA
+  NEEDS_REVISION
+  COMPLETED
+  FAILED
+  BLOCKED
+  WAR_ROOM // Claim 1: Deadlock Mode
+}
+
+// Phase 3: New Enums
+enum IssueType {
+  MISSING_INFORMATION
+  AMBIGUITY
+  CONFLICT
+}
+
+enum EscalationStatus {
+  OPEN
+  RESOLVED
+  REJECTED
+}
+
+// Phase 4: Governance Enums
+enum GovernanceAction {
+  PROMOTE
+  DEMOTE
+  TERMINATE
+  WARNING
+  FLAG
+}
+
+enum AgentRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+
+// Phase 6: Full Repo Understanding
+model Repo {
+  id         String   @id @default(uuid())
+  projectId  String   @unique
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rootPath   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  files      RepoFile[]
+}
+
+model RepoFile {
+  id         String   @id @default(uuid())
+  repoId     String
+  repo       Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  path       String   // relative path
+  ext        String
+  size       Int
+  mtime      DateTime
+  contentHash String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  symbols    Symbol[]
+  chunks     FileChunk[]
+
+  @@index([repoId, path])
+}
+
+model Symbol {
+  id         String   @id @default(uuid())
+  repoId     String
+  fileId     String
+  file       RepoFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  name       String
+  kind       String   // function, class, const, export
+  startLine  Int
+  endLine    Int
+  signature  String?  // optional signature text
+  createdAt  DateTime @default(now())
+}
+
+model FileChunk {
+  id         String   @id @default(uuid())
+  repoId     String
+  fileId     String
+  file       RepoFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  symbolId   String?  // optional
+  startLine  Int
+  endLine    Int
+  text       String   @db.Text
+  vectorId   String?  // vector DB id
+  contentHash String
+  createdAt  DateTime @default(now())
+}
+
+// Agent Allocation Hardening
+
