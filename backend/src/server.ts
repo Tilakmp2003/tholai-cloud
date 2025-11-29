@@ -21,9 +21,13 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 4000;
 
-// CORS configuration for dashboard
+// COR configuration for dashboard
 app.use(cors({
-  origin: ['http://localhost:3001', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:3001',
+    'http://localhost:3000',
+    'https://main.d1xncmoa82vznf.amplifyapp.com' // Amplify frontend
+  ],
   credentials: true
 }));
 app.use(express.json());
