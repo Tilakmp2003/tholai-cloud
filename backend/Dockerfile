@@ -25,8 +25,13 @@ RUN npm run build
 # 2. Production Stage
 FROM node:20-alpine
 WORKDIR /app
-# Install git (Crucial for your GitIntegration feature)
-RUN apk add --no-cache git openssh-client python3 make g++
+# Install git (Crucial for your GitIntegration feature) and build tools for native modules
+# Also install Chromium for Puppeteer to avoid downloading it (saves space)
+RUN apk add --no-cache git openssh-client python3 make g++ chromium
+
+# Tell Puppeteer to skip downloading Chrome and use the installed one
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 COPY package*.json ./
 # Install only production dependencies
