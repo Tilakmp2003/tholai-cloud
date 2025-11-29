@@ -141,3 +141,5 @@ async function executeInDocker(code: string, language: string): Promise<Executio
     } catch (e) { console.warn("Failed to clean sandbox dir", e); }
   }
 }
+
+export const sandbox = { executeInSandbox };

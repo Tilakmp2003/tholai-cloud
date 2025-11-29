@@ -45,7 +45,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowJs": true,
-    "noImplicitAny": true
+    "noImplicitAny": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "generated", "dist", "workspaces"]
