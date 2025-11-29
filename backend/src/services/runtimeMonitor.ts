@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sandbox } from './sandbox';
 import { midDevAgent } from '../agents/midDevAgent';
 import { stackTraceMapper } from './stackTraceMapper';

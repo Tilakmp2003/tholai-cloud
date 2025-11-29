@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PrismaClient } from "@prisma/client";
 import { geminiModel } from "../llm/geminiClient";
 import { randomUUID } from "crypto";

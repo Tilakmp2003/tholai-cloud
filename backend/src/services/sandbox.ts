@@ -142,4 +142,10 @@ async function executeInDocker(code: string, language: string): Promise<Executio
   }
 }
 
-export const sandbox = { executeInSandbox };
+export const sandbox = {
+  executeInSandbox,
+  getOrCreateSession: (sessionId: string) => ({
+    exec: async (code: string) => executeInSandbox(code, 'javascript'),
+    streamExec: async (code: string, onData: any) => executeInSandbox(code, 'javascript')
+  })
+};

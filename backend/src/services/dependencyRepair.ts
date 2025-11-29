@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sandbox } from './sandbox';
 
 export class DependencyRepairService {

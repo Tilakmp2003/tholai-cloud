@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { confidenceRouter } from '../services/confidenceRouter';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';

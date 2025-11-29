@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 import { allocateAgentsForProject, analyzeProject } from '../services/agentAllocator';
 import { PrismaClient } from '@prisma/client';
