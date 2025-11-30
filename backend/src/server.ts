@@ -22,13 +22,32 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 4000;
 
 // COR configuration for dashboard
+// COR configuration for dashboard
 app.use(cors({
-  origin: [
-    'http://localhost:3001',
-    'http://localhost:3000',
-    'https://main.d1xncmoa82vznf.amplifyapp.com' // Amplify frontend
-  ],
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3001',
+      'http://localhost:3000',
+      'https://main.d1xncmoa82vznf.amplifyapp.com',
+      'https://d506a8lgzmu1v.cloudfront.net'
+    ];
+
+    // Check exact match or subdomain match
+    if (allowedOrigins.indexOf(origin) !== -1 || 
+        origin.endsWith('.amplifyapp.com') || 
+        origin.endsWith('.cloudfront.net')) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
