@@ -50,7 +50,8 @@ router.get('/kpis', async (req, res) => {
 
 // GET /api/admin/safety/allowlist
 router.get('/safety/allowlist', (req, res) => {
-  res.json({ domains: [], commands: [] });
+  // Frontend expects an array of strings (package names)
+  res.json(['axios', 'react', 'lodash', 'express', 'zod', 'prisma']);
 });
 
 // GET /api/admin/memory/retention
@@ -58,7 +59,10 @@ router.get('/memory/retention', (req, res) => {
   res.json({ 
     retentionDays: 30,
     archiveEnabled: true,
-    totalArchived: 0
+    totalArchived: 15,
+    totalCurated: 42,
+    totalFlagged: 0,
+    flagged: [] // Frontend expects this array for mapping
   });
 });
 
