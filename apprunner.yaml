@@ -3,10 +3,15 @@ runtime: nodejs18
 build:
   commands:
     build:
+      - echo ">> Starting Build"
       - cd backend
-      - npm ci
+      - echo ">> Installing Dependencies (Skipping Puppeteer Download)"
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci
+      - echo ">> Generating Prisma Client"
       - npx prisma generate
+      - echo ">> Compiling TypeScript"
       - npm run build
+      - echo ">> Build Complete"
 run:
   command: node backend/dist/server.js
   network:
