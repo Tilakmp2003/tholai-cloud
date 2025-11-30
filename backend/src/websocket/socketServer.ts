@@ -12,7 +12,27 @@ let io: SocketIOServer | null = null;
 export function initializeWebSocket(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: ['http://localhost:3000', 'http://localhost:3001'],
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'https://main.d1xncmoa82vznf.amplifyapp.com',
+          'https://d506a8lgzmu1v.cloudfront.net'
+        ];
+    
+        // Check exact match or subdomain match
+        if (allowedOrigins.indexOf(origin) !== -1 || 
+            origin.endsWith('.amplifyapp.com') || 
+            origin.endsWith('.cloudfront.net')) {
+          callback(null, true);
+        } else {
+          console.log('[WebSocket] Blocked by CORS:', origin);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       methods: ['GET', 'POST'],
       credentials: true
     }
