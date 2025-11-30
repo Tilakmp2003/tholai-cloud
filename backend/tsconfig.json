@@ -48,5 +48,5 @@
     "noImplicitAny": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "generated", "dist", "workspaces"]
+  "exclude": ["node_modules", "generated", "dist", "workspaces", "src/tests"]
 }
