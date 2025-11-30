@@ -11,5 +11,3 @@ run:
   command: node backend/dist/server.js
   network:
     port: 8080
-    env:
-      PORT: 8080
