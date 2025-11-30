@@ -72,14 +72,11 @@ router.post('/', async (req, res) => {
 
     console.log(`[Projects API] Project created with ID: ${project.id}`);
 
-    // Step 2: Initialize workspace
-    try {
-      await workspaceManager.initializeWorkspace(project.id, project.name);
-      console.log(`[Projects API] Workspace initialized for ${project.id}`);
-    } catch (error: any) {
-      console.error(`[Projects API] Workspace init failed:`, error.message);
-      // Continue - workspace can be initialized later
-    }
+    // Step 2: Initialize workspace (Background)
+    // Don't await this - it takes too long (create-next-app) and will timeout the HTTP request
+    workspaceManager.initializeWorkspace(project.id, project.name)
+      .then(() => console.log(`[Projects API] Workspace initialized for ${project.id}`))
+      .catch(error => console.error(`[Projects API] Workspace init failed:`, error.message));
 
     // Step 3: Analyze PRD and create modules/tasks (async)
     if (description && description.length > 20) {
