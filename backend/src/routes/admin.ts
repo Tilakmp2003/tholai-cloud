@@ -48,4 +48,27 @@ router.get('/kpis', async (req, res) => {
   }
 });
 
+// GET /api/admin/safety/allowlist
+router.get('/safety/allowlist', (req, res) => {
+  res.json({ domains: [], commands: [] });
+});
+
+// GET /api/admin/memory/retention
+router.get('/memory/retention', (req, res) => {
+  res.json({ 
+    retentionDays: 30,
+    archiveEnabled: true,
+    totalArchived: 0
+  });
+});
+
+// GET /api/admin/trace/stats
+router.get('/trace/stats', (req, res) => {
+  res.json({
+    totalTraces: 0,
+    avgLatency: 0,
+    errorRate: 0
+  });
+});
+
 export default router;
