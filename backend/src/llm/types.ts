@@ -2,7 +2,7 @@
  * Type definitions for Multi-Provider LLM System
  */
 
-export type Provider = 'openrouter' | 'groq' | 'gemini';
+export type Provider = 'openrouter' | 'groq' | 'gemini' | 'bedrock';
 
 export interface ModelConfig {
   provider: Provider;

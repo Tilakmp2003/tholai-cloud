@@ -6,14 +6,16 @@
 import OpenAI from 'openai';
 import { LLMMessage, LLMResponse } from '../types';
 
-if (!process.env.GROQ_API_KEY) {
-  throw new Error('GROQ_API_KEY environment variable is not set');
-}
+let groq: OpenAI | null = null;
 
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
+if (process.env.GROQ_API_KEY) {
+  groq = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+  });
+} else {
+  console.warn('[Groq Provider] GROQ_API_KEY not set. Groq will be unavailable.');
+}
 
 export async function callGroq(
   model: string,
@@ -22,6 +24,9 @@ export async function callGroq(
   temperature: number
 ): Promise<LLMResponse> {
   try {
+    if (!groq) {
+      throw new Error('Groq is not initialized (missing API Key)');
+    }
     const completion = await groq.chat.completions.create({
       model,
       messages: messages.map(m => ({

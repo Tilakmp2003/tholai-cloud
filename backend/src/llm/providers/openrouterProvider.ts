@@ -5,11 +5,11 @@
 
 import { LLMMessage, LLMResponse } from '../types';
 
-if (!process.env.OPENROUTER_API_KEY) {
-  throw new Error('OPENROUTER_API_KEY environment variable is not set');
-}
-
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+if (!OPENROUTER_API_KEY) {
+  console.warn('[OpenRouter Provider] OPENROUTER_API_KEY not set. OpenRouter will be unavailable.');
+}
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export async function callOpenRouter(

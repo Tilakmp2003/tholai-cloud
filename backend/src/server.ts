@@ -21,6 +21,17 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 4000;
 
+// Global Error Handling for Startup Crashes
+process.on('uncaughtException', (err) => {
+  console.error('🔥 UNCAUGHT EXCEPTION:', err);
+  // Keep process alive for a moment to flush logs
+  setTimeout(() => process.exit(1), 1000);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 UNHANDLED REJECTION:', reason);
+});
+
 // COR configuration for dashboard
 // COR configuration for dashboard
 app.use(cors({

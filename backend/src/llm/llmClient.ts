@@ -7,6 +7,7 @@ import { ModelConfig, LLMMessage, LLMResponse } from './types';
 import { callOpenRouter } from './providers/openrouterProvider';
 import { callGroq } from './providers/groqProvider';
 import { callGemini } from './providers/geminiProvider';
+import { callBedrock } from './providers/bedrockProvider';
 import { callMockLLM, isMockEnabled } from './mockClient';
 
 export async function callLLM(
@@ -33,6 +34,9 @@ export async function callLLM(
       
       case 'gemini':
         return await callGemini(model, messages, maxTokens, temperature);
+
+      case 'bedrock':
+        return await callBedrock(model, messages, maxTokens, temperature);
       
       default:
         throw new Error(`Unknown provider: ${provider}`);

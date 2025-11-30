@@ -24,7 +24,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     const socketInstance = io(socketUrl, {
       withCredentials: true,
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'], // Force WebSocket to avoid sticky session issues on App Runner
     });
 
     socketInstance.on('connect', () => {

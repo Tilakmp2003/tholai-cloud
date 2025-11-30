@@ -6,7 +6,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { LLMMessage, LLMResponse } from '../types';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+let genAI: GoogleGenerativeAI | null = null;
+if (process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+} else {
+  console.warn('[Gemini Provider] GEMINI_API_KEY not set. Gemini will be unavailable.');
+}
 
 export async function callGemini(
   model: string,
@@ -15,6 +20,9 @@ export async function callGemini(
   temperature: number
 ): Promise<LLMResponse> {
   try {
+    if (!genAI) {
+      throw new Error('Gemini is not initialized (missing API Key)');
+    }
     const geminiModel = genAI.getGenerativeModel({
       model,
       generationConfig: {
