@@ -148,7 +148,11 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      await axios.post(`${API_URL}/api/projects`, data);
+      // Fix: Add required clientName (missing in form)
+      await axios.post(`${API_URL}/api/projects`, {
+        ...data,
+        clientName: 'Internal' 
+      });
       
       // Success Sequence
       setIsSubmitting(false);
@@ -164,9 +168,16 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         window.location.reload();
       }, 1500);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create project:', error);
-      toast.error("Mission Aborted: Initialization Failed");
+      
+      // Improved error visibility
+      const serverMsg = error?.response?.data?.message || 
+                        error?.response?.data?.error || 
+                        JSON.stringify(error?.response?.data) || 
+                        error.message;
+                        
+      toast.error(`Mission Aborted: ${serverMsg}`);
       setIsSubmitting(false);
     }
   };
