@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { geminiModel } from "../llm/geminiClient";
-import { workspaceManager } from "../services/workspaceManager"; // <--- Import singleton
+import { invokeModel, ModelConfig } from "../services/llmClient";
+import { workspaceManager } from "../services/workspaceManager";
 import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();
@@ -48,10 +48,23 @@ Output JSON ONLY:
 }
 `;
 
-    // 3. Call Gemini (The Mediator)
-    const result = await geminiModel.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().replace(/```json\n?|\n```/g, "");
+    // 3. Fetch Agent Config and Call Bedrock
+    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Architect' } }); // War Room uses Architect-level reasoning
+    if (!agentRecord || !agentRecord.modelConfig) {
+      console.error("[WarRoom] Agent config not found. Aborting.");
+      return;
+    }
+    const config = (agentRecord.modelConfig as any).primary as ModelConfig;
+
+    const result = await invokeModel(config, "You are the WAR ROOM MEDIATOR.", prompt);
+    let text = result.text.trim();
+    
+    // Extract JSON from response
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      text = text.substring(jsonStart, jsonEnd + 1);
+    }
     
     let resolution;
     try {

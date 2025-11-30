@@ -1,8 +1,8 @@
-import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { invokeModel, ModelConfig } from '../services/llmClient';
+import { queryVectorDB } from '../services/ragService';
+import { checkBudget } from '../services/preflightService';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { ModelConfig } from '../llm/types';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +11,7 @@ You are a World-Class Product Designer and Creative Director (ex-Apple, ex-Airbn
 Your goal is to design beautiful, functional, and accessible user interfaces that delight users.
 You balance aesthetic excellence with engineering feasibility.
 
-You will be given a Design Brief (from a Socratic Interrogator session).
+You will be given a Design Brief (from a Socratic Interrogator session) and RAG Context.
 Your job is to produce a comprehensive **Design Package**.
 
 You must provide THREE distinct visual directions (e.g., "Minimalist/Clean", "Playful/Vibrant", "Enterprise/Trust"),
@@ -70,32 +70,39 @@ export async function generateDesignPackage(
   projectId: string,
   projectName: string,
   taskTitle: string,
-  designBrief: any
+  designBrief: any,
+  agentConfig: ModelConfig,
+  ragContext: string
 ): Promise<DesignPackageContent> {
-  const modelConfig = getDefaultModelConfig('ideation');
   
   const prompt = `
     Project: ${projectName}
     Task: ${taskTitle}
     Design Brief: ${JSON.stringify(designBrief, null, 2)}
     
+    RAG Context:
+    ${ragContext}
+    
     Generate the Design Package JSON.
   `;
 
-  const response = await callLLM(
-    modelConfig,
-    [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: prompt }
-    ]
+  const response = await invokeModel(
+    agentConfig,
+    SYSTEM_PROMPT,
+    prompt
   );
 
   let designPackageContent: DesignPackageContent;
   try {
-    const content = response.content.replace(/```json/g, '').replace(/```/g, '').trim();
+    let content = response.text.trim();
+    const jsonStart = content.indexOf('{');
+    const jsonEnd = content.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      content = content.substring(jsonStart, jsonEnd + 1);
+    }
     designPackageContent = JSON.parse(content);
   } catch (e) {
-    console.error('[Designer] Failed to parse JSON:', response.content);
+    console.error('[Designer] Failed to parse JSON:', response.text);
     throw new Error('Failed to parse Design Package JSON');
   }
 
@@ -113,7 +120,6 @@ export async function generateDesignPackage(
 
 export async function runDesignerAgentOnce() {
   // 1. Find a task assigned to DESIGNER or a generic 'design' task
-  // For now, we look for tasks with requiredRole = 'DESIGNER' and status = 'QUEUED' or 'ASSIGNED'
   const tasks = await prisma.task.findMany({
     where: {
       requiredRole: 'DESIGNER',
@@ -132,57 +138,78 @@ export async function runDesignerAgentOnce() {
   });
 
   if (tasks.length === 0) return null;
-  const task = tasks[0] as any; // Cast to any to avoid strict typing issues with relations for now
+  const task = tasks[0] as any;
   
-  // Verify we have the project ID
   if (!task.module || !task.module.project) {
     console.error(`[Designer] Task ${task.id} has no associated project`);
     return null;
   }
   const projectId = task.module.project.id;
 
+  // 2. Find the Designer Agent (Seeded)
+  const agent = await prisma.agent.findFirst({
+    where: { role: 'Designer' }
+  });
+
+  if (!agent) {
+    console.error("[Designer] No Designer agent found in DB. Please run seed.");
+    return null;
+  }
+
   // Claim task
   await prisma.task.update({
     where: { id: task.id },
     data: { 
       status: 'IN_PROGRESS', 
-      assignedToAgent: {
-        connectOrCreate: {
-          where: { id: 'designer-agent-singleton' },
-          create: {
-            id: 'designer-agent-singleton',
-            role: 'DESIGNER',
-            specialization: 'UI/UX',
-            modelConfig: {}
-          }
-        }
-      }
-    } as any // Cast to avoid strict type checks on update input
+      assignedToAgentId: agent.id
+    }
   });
 
   console.log(`[Designer] Starting task: ${task.title}`);
 
   try {
-    // 2. Prepare Context
-    // We expect the 'contextPacket' to contain the 'designBrief' from Socratic
+    // 3. Prepare Context & RAG
     const contextPacket = task.contextPacket as any;
     const designBrief = contextPacket?.designBrief || task.description || "No brief provided";
+    
+    // RAG Retrieval
+    const ragResult = await queryVectorDB(task.title + " " + JSON.stringify(designBrief));
+    const ragContext = ragResult.docs.map(d => d.content).join("\n\n");
 
-    // 3. Generate Design Package
+    // 4. Preflight Check
+    // Estimate cost (rough)
+    const estimatedTokens = (SYSTEM_PROMPT.length + JSON.stringify(designBrief).length + ragContext.length) / 4;
+    const estimatedCost = (estimatedTokens / 1000) * ((agent.modelConfig as any)?.primary?.estimated_cost_per_1k_tokens_usd || 0.12);
+
+    const preflight = await checkBudget(task.id, agent.id, estimatedCost);
+    if (!preflight.allowed) {
+      console.warn(`[Designer] Task blocked by budget: ${preflight.reason}`);
+      await prisma.task.update({
+        where: { id: task.id },
+        data: { status: 'BLOCKED', blockedReason: preflight.reason }
+      });
+      return null;
+    }
+
+    // 5. Generate Design Package
+    const modelConfig = (agent.modelConfig as any).primary as ModelConfig;
+    
     const designPackageContent = await generateDesignPackage(
       projectId,
       task.module.project.name,
       task.title,
-      designBrief
+      designBrief,
+      modelConfig,
+      ragContext
     );
 
-    // 4. Update Task
+    // 6. Update Task
     await prisma.task.update({
       where: { id: task.id },
       data: {
         status: designPackageContent.requiresHumanReview ? 'IN_REVIEW' : 'COMPLETED',
-        outputArtifact: JSON.stringify(designPackageContent), // Store as string
-        designContext: designPackageContent as any // Pass to Architect
+        outputArtifact: JSON.stringify(designPackageContent),
+        designContext: designPackageContent as any
       } as any
     });
 

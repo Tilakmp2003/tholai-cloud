@@ -18,3 +18,5 @@ coverage
 .idea
 *.pem
 workspaces/
+.terraform/
+.terraform.lock.hcl

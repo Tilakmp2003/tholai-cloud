@@ -13,6 +13,8 @@ import { generateDesignPackage } from '../agents/designerAgent';
 import { approvalGates } from './approvalGates';
 import { PrismaClient, Module } from '@prisma/client';
 import { analyzeProject, allocateAgentsForProject, getTotalAgentCount, AgentAllocation } from './agentAllocator';
+import { queryVectorDB } from './ragService';
+import { ModelConfig } from './llmClient';
 
 const prisma = new PrismaClient();
 
@@ -197,11 +199,27 @@ export async function planProject(
   let designContextString = "";
   try {
     // We create a temporary "task" context for the designer
+    
+    // Fetch Designer Agent Config
+    const designerAgent = await prisma.agent.findFirst({ where: { role: 'Designer' } });
+    const agentConfig = (designerAgent?.modelConfig as any)?.primary as ModelConfig;
+    
+    if (!agentConfig) {
+       console.warn('[ProjectPlanner] Designer agent config not found. Skipping design phase.');
+       throw new Error("Designer Agent not configured");
+    }
+
+    // RAG Retrieval
+    const ragResult = await queryVectorDB("Initial Design Direction " + finalDescription);
+    const ragContext = ragResult.docs.map(d => d.content).join("\n\n");
+
     const designPackage = await generateDesignPackage(
       projectId, 
       "Project Plan", 
       "Initial Design Direction", 
-      { goal: finalDescription }
+      { goal: finalDescription },
+      agentConfig,
+      ragContext
     );
     
     designContextString = `

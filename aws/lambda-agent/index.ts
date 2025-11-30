@@ -1,37 +1,42 @@
-import { APIGatewayProxyHandler } from 'aws-lambda';
+import { APIGatewayProxyHandler, SQSHandler } from 'aws-lambda';
+import { runMidDevAgentOnce } from '../../backend/src/agents/midDevAgent';
+import { runDesignerAgentOnce } from '../../backend/src/agents/designerAgent';
+import { runQAAgentOnce } from '../../backend/src/agents/qaAgent';
 
-// This is a placeholder for the actual agent runner logic.
-// In a real scenario, this would import the agent runtime and execute the task.
+// Handler for SQS Events
+export const handler: SQSHandler = async (event) => {
+  console.log(`[Lambda] Received batch of ${event.Records.length} records`);
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-  console.log('Agent Lambda invoked with event:', JSON.stringify(event, null, 2));
+  for (const record of event.Records) {
+    try {
+      const body = JSON.parse(record.body);
+      const { agentId, taskId, role } = body;
 
-  const body = JSON.parse(event.body || '{}');
-  const { agentId, taskId, contextPacket } = body;
+      console.log(`[Lambda] Processing Task ${taskId} for Agent ${agentId} (Role: ${role})`);
 
-  if (!agentId || !taskId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Missing agentId or taskId' }),
-    };
-  }
-
-  // TODO: Initialize Agent Runtime
-  // const agent = new Agent(agentId);
-  // const result = await agent.execute(taskId, contextPacket);
-
-  // Mock result for now
-  const result = {
-    status: 'COMPLETED',
-    output: `Agent ${agentId} executed task ${taskId} successfully.`,
-    metrics: {
-      duration_ms: 120,
-      tokens_used: 50
+      let result;
+      switch (role) {
+        case 'MidDev':
+        case 'JuniorDev':
+        case 'SeniorDev':
+          result = await runMidDevAgentOnce(); 
+          break;
+        case 'DESIGNER':
+          result = await runDesignerAgentOnce();
+          break;
+        case 'QA':
+          result = await runQAAgentOnce();
+          break;
+        default:
+          console.log(`[Lambda] Unknown role ${role}, defaulting to MidDev logic`);
+          result = await runMidDevAgentOnce();
+      }
+      
+      console.log(`[Lambda] Task ${taskId} completed successfully.`);
+    } catch (error) {
+      console.error(`[Lambda] Failed to process record ${record.messageId}:`, error);
+      // Throwing error here will trigger SQS retry (visibility timeout)
+      throw error; 
     }
-  };
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(result),
-  };
+  }
 };

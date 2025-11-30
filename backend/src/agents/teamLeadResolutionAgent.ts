@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { PrismaClient } from "@prisma/client";
-import { geminiModel } from "../llm/geminiClient";
+import { invokeModel, ModelConfig } from "../services/llmClient";
 import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();
@@ -40,8 +40,14 @@ export async function runTeamLeadResolutionOnce() {
       const issueType = esc.issueType;
 
       // ----------------------------------------------
-      // 2. Ask Gemini for clarification/fix
+      // 2. Fetch Agent Config and Ask Bedrock for clarification/fix
       // ----------------------------------------------
+      const agentRecord = await prisma.agent.findFirst({ where: { role: 'TeamLead' } });
+      if (!agentRecord || !agentRecord.modelConfig) {
+        console.error("[TeamLead-Resolution] Agent config not found. Skipping.");
+        continue;
+      }
+      const config = (agentRecord.modelConfig as any).primary as ModelConfig;
       const prompt = `
 You are a Team Lead Agent in a virtual software company.
 A developer has raised an escalation because they are confused.
@@ -65,21 +71,21 @@ Strict Output (JSON only):
 
       let responseText = "";
       try {
-        const result = await geminiModel.generateContent(prompt);
-        const res = await result.response;
-        responseText = res.text();
+        const result = await invokeModel(config, "You are a Team Lead Agent.", prompt);
+        responseText = result.text;
 
       } catch (err: any) {
-        if (err.status === 429) {
-          console.log(
-            `[TeamLead-Resolution] Rate limit hit. Skipping this cycle for escalation ${esc.id}`
-          );
-          continue;
-        }
-        throw err;
+        console.error(`[TeamLead-Resolution] Error invoking LLM for escalation ${esc.id}:`, err);
+        continue;
       }
 
-      const cleaned = responseText.replace(/```json\n?|\n```/g, "");
+      // Extract JSON
+      let cleaned = responseText.trim();
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+      }
       const parsed = JSON.parse(cleaned);
 
       const clarification = parsed.clarification;

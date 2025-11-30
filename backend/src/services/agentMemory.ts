@@ -7,18 +7,22 @@
 
 import { PrismaClient } from '@prisma/client';
 import { createHash } from 'crypto';
-import { callLLM } from '../llm/llmClient';
-import { ModelConfig } from '../llm/types';
+import { invokeModel, ModelConfig } from './llmClient';
 import { emitLog } from '../websocket/socketServer';
 
 const prisma = new PrismaClient();
 
-const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  provider: 'gemini',
-  model: 'gemini-2.0-flash',
-  maxTokens: 2048,
-  temperature: 0.2
-};
+export async function extractMemory(taskId: string, agentId: string, output: any): Promise<void> {
+  const agentRecord = await prisma.agent.findFirst({ where: { id: agentId } });
+  if (!agentRecord || !agentRecord.modelConfig) {
+    console.warn(`[AgentMemory] Agent ${agentId} not configured. Skipping memory extraction.`);
+    return;
+  }
+  const modelConfig = (agentRecord.modelConfig as any).primary as ModelConfig;
+  // TODO: Implement memory extraction logic
+  console.log(`[AgentMemory] Memory extraction called for task ${taskId} by agent ${agentId}`);
+}
+
 
 export interface MemoryEntry {
   id: string;
@@ -110,12 +114,15 @@ Rules:
 - For failures, explain what to avoid`;
 
   try {
-    const response = await callLLM(DEFAULT_MODEL_CONFIG, [
-      { role: 'system', content: 'You are a learning extraction system. Return only valid JSON array.' },
-      { role: 'user', content: prompt }
-    ]);
+    const agentRecord = await prisma.agent.findFirst({ where: { role: 'MidDev' } });
+    if (!agentRecord || !agentRecord.modelConfig) {
+      return [];
+    }
+    const modelConfig = (agentRecord.modelConfig as any).primary as ModelConfig;
 
-    const clean = response.content.replace(/```json|```/g, '').trim();
+    const response = await invokeModel(modelConfig, 'You are a learning extraction system. Return only valid JSON array.', prompt);
+
+    const clean = response.text.replace(/```json|```/g, '').trim();
     return JSON.parse(clean);
   } catch (error) {
     console.error('[AgentMemory] Failed to extract learnings:', error);

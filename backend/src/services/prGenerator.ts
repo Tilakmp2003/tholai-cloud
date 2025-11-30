@@ -10,18 +10,10 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { callLLM } from '../llm/llmClient';
-import { ModelConfig } from '../llm/types';
+import { invokeModel, ModelConfig } from './llmClient';
 import { emitLog } from '../websocket/socketServer';
 
-const prisma = new PrismaClient();
-
-const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  provider: 'gemini',
-  model: 'gemini-2.0-flash',
-  maxTokens: 1024,
-  temperature: 0.3
-};
+const prisma =new PrismaClient();
 
 export interface PRMetadata {
   taskId: string;
@@ -123,18 +115,16 @@ async function generateExplanation(
   traceId?: string
 ): Promise<string> {
   try {
-    const response = await callLLM(DEFAULT_MODEL_CONFIG, [
-      {
-        role: 'system',
-        content: 'You are a technical writer. Write a 1-2 sentence explanation of why this code change was made. Be concise and specific.'
-      },
-      {
-        role: 'user',
-        content: `Task: ${taskTitle}\nFiles changed: ${filesChanged.join(', ')}\n\nExplain why this change was made in 1-2 sentences.`
-      }
-    ]);
+    const agentRecord = await prisma.agent.findFirst({ where: { role: 'MidDev' } });
+    if (!agentRecord || !agentRecord.modelConfig) {
+      return `Implements: ${taskTitle}`;
+    }
+    const config = (agentRecord.modelConfig as any).primary as ModelConfig;
+
+    const prompt = `Task: ${taskTitle}\nFiles changed: ${filesChanged.join(', ')}\n\nExplain why this change was made in 1-2 sentences.`;
+    const response = await invokeModel(config, 'You are a technical writer. Write a 1-2 sentence explanation of why this code change was made. Be concise and specific.', prompt);
     
-    return response.content.trim();
+    return response.text.trim();
   } catch (error) {
     return `Implements: ${taskTitle}`;
   }

@@ -5,11 +5,8 @@
  * Generates 3 distinct options (Conservative, Balanced, Bold) and creates ADRs.
  */
 
-import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { invokeModel, ModelConfig } from '../services/llmClient';
 import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
-import { ModelConfig } from '../llm/types';
 
 const prisma = new PrismaClient();
 
@@ -47,11 +44,9 @@ export interface ArchitectProposal {
   tradeoffs: string;
   costEstUsdMonth: number;
   diagramMermaid: string;
-  tasks: any[]; // Legacy field, keep empty or minimal
+  tasks: any[];
   safetyFlags: string[];
   estimatedTimelineWeeks: number;
-  
-  // Principal Engineer Fields
   dataStrategy: string;
   riskAssessment: string;
   scalabilityPlan: string;
@@ -63,8 +58,8 @@ export interface ArchitectProposal {
       description?: string;
       required_role?: string;
       acceptance_criteria?: string[];
-      module?: string; // Optional mapping
-      component?: string; // Optional mapping
+      module?: string;
+      component?: string;
     }[];
   }[];
   requires_human_review: boolean;
@@ -73,43 +68,20 @@ export interface ArchitectProposal {
 export interface ArchitectOutput {
   proposals: ArchitectProposal[];
   recommendedProposalId: string;
-  adr: string; // Markdown Architecture Decision Record
-  diagrams: string[]; // URLs or Mermaid strings
+  adr: string;
+  diagrams: string[];
 }
 
 export const architectAgent = {
-  /**
-   * Design architecture for a given requirement
-   */
   async designSystem(projectId: string, requirements: string): Promise<ArchitectOutput> {
     console.log(`[Architect] Designing system for project ${projectId}...`);
 
-    // 0. Cost Guard Check (Mocked for now, ideally check budgetLimiter)
-    const dailyCost = 0; // Fetch from DB
-    const DAILY_LIMIT = 10.0;
-    if (dailyCost > DAILY_LIMIT) {
-      console.warn('[Architect] Daily budget exceeded. Switching to dry-run/cheaper mode.');
-      // Fallback logic or error could go here
+    // Fetch Agent Config from DB
+    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Architect' } });
+    if (!agentRecord || !agentRecord.modelConfig) {
+      throw new Error("Architect Agent not configured in DB");
     }
-
-    // 1. Ideation Phase (Creative Model)
-    const ideationConfig: ModelConfig = {
-      provider: 'openrouter',
-      model: 'deepseek/deepseek-chat', // DeepSeek V3 for creativity
-      temperature: 0.7,
-      maxTokens: 4000
-    };
-
-    // 2. Artifact Generation Phase (Cheaper/Faster Model)
-    // We could use this for ADR refinement if we split the steps, 
-    // but for now we'll keep it simple and use the creative model for the main proposal 
-    // to ensure consistency, but we define the config for future use.
-    const _artifactConfig: ModelConfig = {
-      provider: 'gemini',
-      model: 'gemini-1.5-flash',
-      temperature: 0.2,
-      maxTokens: 2000
-    };
+    const config = (agentRecord.modelConfig as any).primary as ModelConfig;
 
     const prompt = `
 Project Requirements:
@@ -121,28 +93,26 @@ Return ONLY valid JSON matching the specified format.
 `;
 
     try {
-      // Audit Log: Record Prompt
-      const auditLog = {
-        timestamp: new Date().toISOString(),
-        projectId,
-        phase: 'ideation',
-        model: ideationConfig.model,
-        prompt: prompt.substring(0, 500) + '...' // Truncate for log
-      };
-      console.log('[Architect] Audit Log:', JSON.stringify(auditLog));
+      console.log(`[Architect] Invoking ${config.model}...`);
+      
+      const response = await invokeModel(config, SYSTEM_PROMPT, prompt);
 
-      const response = await callLLM(ideationConfig, [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt }
-      ]);
+      console.log('[Architect] Response Tokens:', response.tokensOut);
 
-      // Audit Log: Record Response
-      console.log('[Architect] Response Tokens:', response.usage?.totalTokens || 'unknown');
+      // Robust JSON Extraction
+      let cleaned = response.text.trim();
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+      }
 
-      const cleaned = response.content.replace(/```json|```/g, '').trim();
       const output: ArchitectOutput = JSON.parse(cleaned);
 
-      // 3. Persist ADR (Optional: could be stored in Artifact table)
+      // Validate Output
+      if (!output.adr) output.adr = "No ADR generated.";
+      if (!output.proposals) output.proposals = [];
+
       console.log(`[Architect] Generated ADR: ${output.adr.substring(0, 100)}...`);
       
       return output;

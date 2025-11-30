@@ -11,12 +11,31 @@ class TaskQueueService {
   private isProcessing = false;
 
   constructor() {
-    // Connect to local Redis (default port 6379)
-    // In production, this comes from process.env.REDIS_URL
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST || "localhost",
-      port: Number(process.env.REDIS_PORT) || 6379,
-      lazyConnect: true // Don't crash if Redis is missing in dev
+    // Connect to Redis (supports REDIS_URL or REDIS_HOST/PORT)
+    if (process.env.REDIS_URL) {
+      this.redis = new Redis(process.env.REDIS_URL, {
+        lazyConnect: true
+      });
+    } else {
+      this.redis = new Redis({
+        host: process.env.REDIS_HOST || "localhost",
+        port: Number(process.env.REDIS_PORT) || 6379,
+        lazyConnect: true,
+        retryStrategy: (times) => {
+          // Retry with exponential backoff, max 2 seconds
+          return Math.min(times * 50, 2000);
+        }
+      });
+    }
+
+    // Prevent unhandled error events from crashing the process
+    this.redis.on('error', (err) => {
+      // Only log if it's not a known connection issue we're already handling
+      if (err.message.includes('ECONNREFUSED') || err.message.includes('getaddrinfo')) {
+        // Silent or debug log for common connection errors to avoid log spam
+      } else {
+        console.warn('[TaskQueue] Redis connection error:', err.message);
+      }
     });
   }
 

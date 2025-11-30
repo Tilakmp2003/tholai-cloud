@@ -6,18 +6,10 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { callLLM } from '../llm/llmClient';
-import { ModelConfig } from '../llm/types';
+import { invokeModel, ModelConfig } from '../services/llmClient';
 import { emitLog } from '../websocket/socketServer';
 
 const prisma = new PrismaClient();
-
-const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  provider: 'gemini',
-  model: 'gemini-2.0-flash',
-  maxTokens: 4096,
-  temperature: 0.3
-};
 
 const AMBIGUITY_THRESHOLD = 0.15; // 15% ambiguity is acceptable
 const MAX_INTERROGATION_ROUNDS = 5;
@@ -84,12 +76,15 @@ Rules:
 - Questions should be specific and actionable`;
 
   try {
-    const response = await callLLM(DEFAULT_MODEL_CONFIG, [
-      { role: 'system', content: 'You are a requirements analyst. Return only valid JSON.' },
-      { role: 'user', content: prompt }
-    ]);
+    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Socratic' } });
+    if (!agentRecord || !agentRecord.modelConfig) {
+      return { score: 0.5, issues: [] };
+    }
+    const modelConfig = (agentRecord.modelConfig as any).primary as ModelConfig;
 
-    const clean = response.content.replace(/```json|```/g, '').trim();
+    const response = await invokeModel(modelConfig, 'You are a requirements analyst. Return only valid JSON.', prompt);
+
+    const clean = response.text.replace(/```json|```/g, '').trim();
     return JSON.parse(clean);
   } catch (error) {
     console.error('[Socratic] Failed to analyze ambiguity:', error);
@@ -116,11 +111,14 @@ Write a clear, structured requirements document that incorporates all clarificat
 Use bullet points and sections. Be specific and actionable.`;
 
   try {
-    const response = await callLLM(DEFAULT_MODEL_CONFIG, [
-      { role: 'system', content: 'You are a technical writer creating clear requirements documents.' },
-      { role: 'user', content: prompt }
-    ]);
-    return response.content;
+    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Socratic' } });
+    if (!agentRecord || !agentRecord.modelConfig) {
+      return originalRequirements;
+    }
+    const modelConfig = (agentRecord.modelConfig as any).primary as ModelConfig;
+
+    const response = await invokeModel(modelConfig, 'You are a technical writer creating clear requirements documents.', prompt);
+    return response.text;
   } catch (error) {
     console.error('[Socratic] Failed to synthesize requirements:', error);
     return originalRequirements;

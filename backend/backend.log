@@ -1,0 +1,504 @@
+
+> backend@1.0.0 dev
+> tsx src/server.ts
+
+[WebSocket] Server initialized
+🚀 Server running on http://localhost:4000
+📡 WebSocket ready for real-time updates
+🧠 Starting Governance Loop...
+[HeadAgent] Governance loop started...
+📨 Starting Task Queue Processor...
+🧹 Starting Memory Retention Scheduler...
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Projects API] Creating project: E2E Test Project 1764481393053
+[Projects API] Project created with ID: 5724dd35-1fff-408f-8827-1d7d8859f04f
+
+[Workspace] 🏗️  Initializing workspace for "E2E Test Project 1764481393053"...
+[Workspace] 📦 Scaffolding Next.js app...
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Workspace] ✅ Next.js app created at: /Volumes/Tilak/Life-Changer/workspaces/e2e-test-project-1764481393053
+[Workspace] 🎨 Applied First Paint custom landing page
+[Projects API] Workspace initialized for 5724dd35-1fff-408f-8827-1d7d8859f04f
+[ProjectPlanner] Planning project 5724dd35-1fff-408f-8827-1d7d8859f04f...
+[ProjectPlanner] Running Socratic Interrogator...
+[LLM Client] Routing to gemini (gemini-2.0-flash)
+[ProjectPlanner] ❓ Requirements need clarification (5 questions)
+[Projects API] Planning complete for 5724dd35-1fff-408f-8827-1d7d8859f04f
+  → Created 0 modules
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Projects API] Creating project: E2E Test Project 1764481506568
+[Projects API] Project created with ID: c0e8f9cc-862f-4e54-95c6-9cc85a6845b2
+
+[Workspace] 🏗️  Initializing workspace for "E2E Test Project 1764481506568"...
+[Workspace] 📦 Scaffolding Next.js app...
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[TeamLead-Resolution] No OPEN escalations
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Workspace] ✅ Next.js app created at: /Volumes/Tilak/Life-Changer/workspaces/e2e-test-project-1764481506568
+[Workspace] 🎨 Applied First Paint custom landing page
+[Projects API] Workspace initialized for c0e8f9cc-862f-4e54-95c6-9cc85a6845b2
+[ProjectPlanner] Planning project c0e8f9cc-862f-4e54-95c6-9cc85a6845b2...
+[ProjectPlanner] Running Socratic Interrogator...
+[LLM Client] Routing to gemini (gemini-2.0-flash)
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[ProjectPlanner] ❓ Requirements need clarification (5 questions)
+[Projects API] Planning complete for c0e8f9cc-862f-4e54-95c6-9cc85a6845b2
+  → Created 0 modules
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
+[Runner] Cycle started...
+[Runner] 💻 Running in Local Mode (In-Process)
+[TeamLead-Resolution] Checking escalations...
+[HeadAgent] Governance loop started...
+[TeamLead-Resolution] No OPEN escalations
+[QA] Validating task: 9e5531a3-4738-4b02-8b51-4516548394a2
+[HeadAgent] Skipping agent designer-agent-singleton - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_teamLead_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_juniorDev_2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_qa_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 267d0f0d-8b4e-41fe-bbe2-f839981c56ab - insufficient data (0 tasks)
+[HeadAgent] Skipping agent b6e36dc7-1df1-4e3a-8ebb-0fc1b65f6172 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_seniorDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent bd27464a-470c-4b6d-b3a1-3e8670bb6ea1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent proj_8c720f93-c0f6-479a-b7d1-26b5a52d785c_midDev_1 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 30c61fbc-eafc-4aee-89f1-b6440a2d2bd2 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent a186e06b-d700-4d89-bb9b-1dfe16a46f38 - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 0b33ab4c-585e-4fe3-8444-5084f854ef9f - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 01ddbbe0-48cd-4cfb-b589-c6f4494452ca - insufficient data (0 tasks)
+[HeadAgent] Skipping agent 89b250eb-3c02-4c5b-bebb-cd104b87d24a - insufficient data (0 tasks)
+[HeadAgent] Governance loop finished.
+[QA] 🧪 Running Multi-Layered Tests for Project 1bab16ee-f867-40cf-987a-22d0d21372bb...
+[QA] No workspace path found for project 1bab16ee-f867-40cf-987a-22d0d21372bb
+[QA] Validating task: 4e95cccb-2ba7-47b7-a8f9-ce1b33ebc482
+[QA] 🧪 Running Multi-Layered Tests for Project dc214a8e-ecc8-44aa-b59e-8eef675b3c89...
+[QA] No workspace path found for project dc214a8e-ecc8-44aa-b59e-8eef675b3c89
+[QA] Validating task: a861e51a-4a58-4d59-8611-b436cd239666
+[QA] 🧪 Running Multi-Layered Tests for Project f3a313be-9446-439c-9f75-c6f4d83231f6...
+[QA] No workspace path found for project f3a313be-9446-439c-9f75-c6f4d83231f6
+[Runner] Cycle finished.
