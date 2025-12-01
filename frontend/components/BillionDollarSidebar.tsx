@@ -81,7 +81,7 @@ export default function BillionDollarSidebar() {
         initial={false}
         animate={{ width: isCollapsed ? 80 : 280 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="relative h-screen bg-zinc-950/80 backdrop-blur-xl border-r border-white/10 flex flex-col shrink-0 z-50 shadow-[20px_0_40px_-10px_rgba(0,0,0,0.5)]"
+        className="relative h-screen bg-sidebar/80 backdrop-blur-2xl border-r border-white/[0.05] flex flex-col shrink-0 z-50 shadow-[20px_0_40px_-10px_rgba(0,0,0,0.5)]"
       >
         {/* Toggle Button */}
         <button
@@ -98,9 +98,9 @@ export default function BillionDollarSidebar() {
 
         {/* Header */}
         <div className={cn("flex items-center gap-3 p-6", isCollapsed ? "justify-center px-2" : "")}>
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-[0_0_15px_rgba(99,102,241,0.3)] ring-1 ring-white/20">
-            <Command className="h-5 w-5 text-white" />
-            <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 hover:opacity-100 transition-opacity" />
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-[0_0_20px_rgba(99,102,241,0.4)] ring-1 ring-white/20 group cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Command className="h-5 w-5 text-white relative z-10" />
           </div>
           
           <AnimatePresence>
@@ -119,7 +119,7 @@ export default function BillionDollarSidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1.5 px-3 py-4">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.path;
             
@@ -129,26 +129,26 @@ export default function BillionDollarSidebar() {
                   <button
                     onClick={() => router.push(getPath(item.path))}
                     className={cn(
-                      "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 outline-none",
+                      "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 outline-none",
                       isActive 
                         ? "text-white" 
-                        : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+                        : "text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-100"
                     )}
                   >
                     {/* Active Background & Magic Line */}
                     {isActive && (
                       <motion.div
                         layoutId="activeTab"
-                        className="absolute inset-0 rounded-lg bg-white/10"
+                        className="absolute inset-0 rounded-lg bg-white/[0.08] border border-white/[0.05] shadow-inner"
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       >
-                        <div className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
+                        <div className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-indigo-500 shadow-[0_0_12px_#6366f1]" />
                       </motion.div>
                     )}
 
                     {/* Icon */}
                     <div className="relative z-10 flex shrink-0 items-center justify-center">
-                      <item.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-white" : "text-zinc-400 group-hover:text-zinc-100")} />
+                      <item.icon className={cn("h-5 w-5 transition-colors duration-300", isActive ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-300")} />
                       
                       {/* Live Indicator for Command Center */}
                       {item.name === 'Command Center' && (
@@ -186,8 +186,8 @@ export default function BillionDollarSidebar() {
 
                     {/* Shortcut Hint (Hover) */}
                     {!isCollapsed && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
-                        <kbd className="hidden rounded bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 shadow border border-zinc-800 lg:inline-block">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <kbd className="hidden rounded bg-zinc-900/50 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 border border-white/5 lg:inline-block">
                           {item.shortcut}
                         </kbd>
                       </div>
@@ -210,13 +210,13 @@ export default function BillionDollarSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="mt-auto border-t border-white/5 p-4 space-y-4">
+        <div className="mt-auto border-t border-white/[0.05] p-4 space-y-4">
           {/* Global Search */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button 
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg border border-white/5 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-100 hover:border-white/10",
+                  "flex w-full items-center gap-3 rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2 text-sm text-zinc-400 transition-all hover:bg-white/[0.05] hover:text-zinc-100 hover:border-white/10",
                   isCollapsed ? "justify-center px-0" : ""
                 )}
               >
@@ -224,7 +224,7 @@ export default function BillionDollarSidebar() {
                 {!isCollapsed && (
                   <>
                     <span className="flex-1 text-left">Search...</span>
-                    <kbd className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 border border-zinc-700">
+                    <kbd className="rounded bg-zinc-900/50 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 border border-white/5">
                       ⌘K
                     </kbd>
                   </>
@@ -252,7 +252,7 @@ export default function BillionDollarSidebar() {
 
             <SignedIn>
               <div className={cn(
-                "flex items-center gap-3 w-full rounded-lg p-2 transition-colors hover:bg-white/5 group text-left",
+                "flex items-center gap-3 w-full rounded-lg p-2 transition-colors hover:bg-white/[0.05] group text-left",
                 isCollapsed ? "justify-center" : ""
               )}>
                 <UserButton 

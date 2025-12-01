@@ -68,7 +68,7 @@ export default function CommandCenter() {
         </div>
 
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/50 border border-white/5 text-xs font-mono text-zinc-400">
+           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-zinc-400 shadow-sm">
             <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500'}`} />
             {isConnected ? 'SOCKET_CONNECTED' : 'SOCKET_OFFLINE'}
           </div>
@@ -126,8 +126,8 @@ export default function CommandCenter() {
           transition={{ delay: 0.5 }}
           className="md:col-span-7 lg:col-span-8 h-full"
         >
-          <div className="h-full flex flex-col rounded-xl border border-white/10 bg-zinc-900/50 backdrop-blur-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+          <div className="h-full flex flex-col rounded-xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05] bg-white/[0.01]">
               <div className="flex items-center gap-2">
                 <Terminal className="h-4 w-4 text-zinc-500" />
                 <span className="text-xs font-medium text-zinc-400 tracking-wider uppercase">System Logs</span>
@@ -162,8 +162,8 @@ export default function CommandCenter() {
           transition={{ delay: 0.6 }}
           className="md:col-span-5 lg:col-span-4 h-full"
         >
-          <div className="h-full flex flex-col rounded-xl border border-white/10 bg-zinc-900/50 backdrop-blur-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+          <div className="h-full flex flex-col rounded-xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05] bg-white/[0.01]">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-zinc-500" />
                 <span className="text-xs font-medium text-zinc-400 tracking-wider uppercase">Active Tasks</span>
@@ -205,7 +205,7 @@ function KpiCard({ label, value, icon: Icon, delay, subValue, alert }: any) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay, duration: 0.4 }}
-      className="relative group overflow-hidden rounded-xl border border-white/10 bg-zinc-900/50 p-6 backdrop-blur-xl transition-all duration-300 hover:border-white/20"
+      className="relative group overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] p-6 backdrop-blur-xl transition-all duration-300 hover:bg-white/[0.04] hover:border-white/[0.15] shadow-lg"
     >
       {/* Top Highlight */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
@@ -273,7 +273,7 @@ function TaskCard({ task, index }: any) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="group relative p-4 rounded-lg border border-white/5 bg-zinc-900/30 hover:bg-zinc-900/60 hover:border-white/10 transition-all duration-200"
+      className="group relative p-4 rounded-lg border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1] transition-all duration-200"
     >
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ function TaskCard({ task, index }: any) {
       </p>
       
       {/* Progress Bar */}
-      <div className="h-0.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-0.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
         <div className="h-full bg-indigo-500 w-1/3 opacity-50 group-hover:opacity-100 transition-opacity" />
       </div>
     </motion.div>

@@ -11,7 +11,9 @@ export function useWebSocket() {
 
   useEffect(() => {
     const socketInstance = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'], // Start with polling for better reliability
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socketInstance.on('connect', () => {

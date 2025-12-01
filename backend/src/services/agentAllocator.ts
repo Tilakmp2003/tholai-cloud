@@ -5,7 +5,7 @@
  */
 
 import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { getAgentConfig } from '../llm/modelRegistry';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
@@ -57,7 +57,7 @@ export async function analyzeProject(prd: string): Promise<ProjectAnalysis> {
   
   try {
     const response = await callLLM(
-      getDefaultModelConfig('TeamLead'),
+      await getAgentConfig('TeamLead'),
       [
         {
           role: 'system',

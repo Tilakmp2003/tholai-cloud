@@ -24,14 +24,14 @@ export function GlobalHeader() {
   }, []);
 
   return (
-    <header className="h-14 border-b border-white/5 bg-zinc-950/50 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-50">
+    <header className="h-14 border-b border-white/[0.05] bg-background/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="relative flex h-3 w-3">
             {isConnected && (
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             )}
-            <span className={`relative inline-flex rounded-full h-3 w-3 ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+            <span className={`relative inline-flex rounded-full h-3 w-3 ${isConnected ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500'}`}></span>
           </div>
           <span className="text-xs font-bold tracking-widest text-zinc-300 uppercase">
             {isConnected ? 'System Online' : 'Disconnected'}

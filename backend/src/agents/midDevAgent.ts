@@ -1,6 +1,6 @@
 import { PrismaClient, Task, TaskStatus } from '@prisma/client';
 import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { getAgentConfig } from '../llm/modelRegistry';
 
 const prisma = new PrismaClient();
 
@@ -34,7 +34,7 @@ OUTPUT JSON ONLY:
 }
 `;
 
-    const config = getDefaultModelConfig('MidDev');
+    const config = await getAgentConfig('MidDev');
     const response = await callLLM(config, [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: "Fix the code based on feedback." }
@@ -70,7 +70,7 @@ OUTPUT JSON ONLY:
   "fileName": "suggested_filename.ts"
 }
 `;
-      const config = getDefaultModelConfig('MidDev');
+      const config = await getAgentConfig('MidDev');
       const response = await callLLM(config, [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: "Implement feature." }

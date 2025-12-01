@@ -5,7 +5,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { AgentAllocation } from './agentAllocator';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { getAgentConfig } from '../llm/modelRegistry';
 
 const prisma = new PrismaClient();
 
@@ -51,7 +51,7 @@ export async function spawnAgents(
             role: schemaRole,
             specialization: schemaRole, // Use role as specialization
             status: 'IDLE',
-            modelConfig: getDefaultModelConfig(schemaRole) as any,
+            modelConfig: await getAgentConfig(schemaRole) as any,
             lastActiveAt: new Date(),
           },
         });

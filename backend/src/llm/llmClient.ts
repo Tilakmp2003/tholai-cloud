@@ -36,7 +36,7 @@ export async function callLLM(
         return await callGemini(model, messages, maxTokens, temperature);
 
       case 'bedrock':
-        return await callBedrock(model, messages, maxTokens, temperature);
+        return await callBedrock(model, messages, maxTokens, temperature, modelConfig.region);
       
       default:
         throw new Error(`Unknown provider: ${provider}`);

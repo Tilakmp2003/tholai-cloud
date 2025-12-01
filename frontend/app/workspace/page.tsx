@@ -74,8 +74,8 @@ const FileTreeItem = ({ node, level, onSelect, selectedPath }: { node: FileNode,
     <div>
       <div 
         className={cn(
-          "flex items-center py-1 px-2 cursor-pointer select-none transition-colors text-[13px] font-mono border-l border-transparent hover:bg-white/5",
-          isSelected ? "bg-white/10 text-emerald-400 border-l-emerald-500" : "text-zinc-400"
+          "flex items-center py-1 px-2 cursor-pointer select-none transition-colors text-[13px] font-mono border-l border-transparent hover:bg-white/[0.05]",
+          isSelected ? "bg-white/[0.08] text-emerald-400 border-l-emerald-500" : "text-zinc-400"
         )}
         style={{ paddingLeft: `${level * 12 + 12}px` }}
         onClick={handleClick}
@@ -135,7 +135,7 @@ function WorkspaceContent() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [unsavedContent, setUnsavedContent] = useState<string | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
-  const [terminalTab, setTerminalTab] = useState<'logs' | 'interactive'>('interactive');
+  const [terminalTab, setTerminalTab] = useState<'logs' | 'interactive' | 'chat'>('interactive');
 
   // 1. Fetch Project Details
   const { data: project } = useQuery<Project>({
@@ -215,9 +215,9 @@ function WorkspaceContent() {
 
   if (!projectId) {
     return (
-      <div className="h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-500 font-mono gap-8 p-8">
+      <div className="h-screen bg-background flex flex-col items-center justify-center text-zinc-500 font-mono gap-8 p-8">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-dashed border-zinc-800 flex items-center justify-center relative overflow-hidden group">
+          <div className="w-20 h-20 rounded-3xl bg-white/[0.03] border border-dashed border-white/10 flex items-center justify-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <Layout className="h-10 w-10 text-zinc-700 group-hover:text-indigo-400 transition-colors" />
           </div>
@@ -238,7 +238,7 @@ function WorkspaceContent() {
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 onClick={() => router.push(`/workspace?project=${p.id}`)}
-                className="bg-zinc-900/50 border border-white/5 rounded-xl p-6 cursor-pointer hover:bg-zinc-900 hover:border-indigo-500/30 transition-all group relative overflow-hidden"
+                className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-6 cursor-pointer hover:bg-white/[0.05] hover:border-indigo-500/30 transition-all group relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <ExternalLink className="h-4 w-4 text-indigo-400" />
@@ -261,9 +261,9 @@ function WorkspaceContent() {
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
               onClick={() => router.push('/')} // Redirect to main Command Center
-              className="bg-zinc-950 border border-dashed border-zinc-800 rounded-xl p-6 cursor-pointer hover:bg-zinc-900/50 hover:border-zinc-700 transition-all flex flex-col items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400"
+              className="bg-transparent border border-dashed border-white/10 rounded-xl p-6 cursor-pointer hover:bg-white/[0.02] hover:border-white/20 transition-all flex flex-col items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400"
             >
-              <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-white/[0.03] flex items-center justify-center">
                 <span className="text-2xl font-light">+</span>
               </div>
               <span className="text-sm font-medium">Create New Project</span>
@@ -283,10 +283,10 @@ function WorkspaceContent() {
   }
 
   return (
-    <div className="h-screen bg-zinc-950 text-zinc-300 font-sans flex flex-col overflow-hidden selection:bg-indigo-500/30">
+    <div className="h-screen bg-background text-zinc-300 font-sans flex flex-col overflow-hidden selection:bg-indigo-500/30">
       
       {/* --- Header Bar --- */}
-      <header className="h-12 border-b border-white/5 bg-zinc-950 flex items-center justify-between px-4 shrink-0 z-10">
+      <header className="h-12 border-b border-white/[0.05] bg-background flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -347,8 +347,8 @@ function WorkspaceContent() {
       {/* --- Main Layout --- */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* 1. Sidebar (File Explorer & Agent Chat) */}
-        <div className="w-64 bg-[#18181b] flex flex-col shrink-0 border-r border-white/5">
+        {/* 1. Sidebar (File Explorer) */}
+        <div className="w-64 bg-[#18181b] flex flex-col shrink-0 border-r border-white/[0.05]">
           {/* Explorer Section */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="h-9 flex items-center px-4 shrink-0">
@@ -375,52 +375,6 @@ function WorkspaceContent() {
               </div>
             </ScrollArea>
           </div>
-
-          {/* Agent Chat Section */}
-          <div className="h-64 flex flex-col border-t border-white/5 bg-[#18181b]">
-            <div className="h-9 flex items-center px-4 shrink-0 gap-2">
-              <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Agent Chat</span>
-            </div>
-            <ScrollArea className="flex-1 px-4 pb-3">
-              <div className="space-y-3">
-                {/* Architect Message 1 */}
-                <div className="flex items-start gap-2">
-                  <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
-                    <div className="text-[10px] text-zinc-500 leading-relaxed">Analyzing requirements for new auth module...</div>
-                  </div>
-                </div>
-
-                {/* Architect Message 2 */}
-                <div className="flex items-start gap-2">
-                  <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
-                    <div className="text-[10px] text-zinc-500 leading-relaxed">Plan created. Using JWT + OAuth2 strategy.</div>
-                  </div>
-                </div>
-
-                {/* Dev Message */}
-                <div className="flex items-start gap-2">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400 shrink-0 mt-0.5">D</div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-bold text-zinc-400 mb-1">Dev</div>
-                    <div className="text-[10px] text-zinc-500 leading-relaxed">Received plan. Starting implementation.</div>
-                  </div>
-                </div>
-
-                {/* QA Message */}
-                <div className="flex items-start gap-2">
-                  <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-400 shrink-0 mt-0.5">Q</div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-bold text-zinc-400 mb-1">QA</div>
-                    <div className="text-[10px] text-zinc-500 leading-relaxed">Test suite ready. Waiting for build.</div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </div>
         </div>
 
         {/* 2. Editor Surface */}
@@ -428,7 +382,7 @@ function WorkspaceContent() {
           {selectedFile ? (
             <>
               {/* Tabs */}
-              <div className="h-9 bg-[#18181b] flex items-center px-0 border-b border-black">
+              <div className="h-9 bg-[#18181b] flex items-center px-0 border-b border-black shrink-0">
                 <div className="h-full px-4 flex items-center gap-2 bg-[#1e1e1e] min-w-[150px] border-t-2 border-indigo-500">
                   <FileIcon name={selectedFile} className="h-3.5 w-3.5" />
                   <span className="text-xs text-zinc-300 font-mono truncate">{selectedFile.split('/').pop()}</span>
@@ -442,7 +396,7 @@ function WorkspaceContent() {
               </div>
 
               {/* Monaco Editor */}
-              <div className="flex-1 relative">
+              <div className="flex-1 relative min-h-0">
                 {isLoadingContent ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#1e1e1e]">
                     <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
@@ -522,44 +476,85 @@ function WorkspaceContent() {
                </div>
             </div>
           )}
-        </div>
 
-      </div>
+          {/* Bottom Panel (Agent Chat & Terminal) */}
+          <div className="h-72 flex flex-col shrink-0 border-t border-white/[0.05] bg-[#18181b]">
+            {/* Tabs */}
+            <div className="h-9 flex items-center px-4 shrink-0 gap-2 overflow-hidden bg-[#18181b] border-b border-white/[0.05]">
+              <div className="flex items-center gap-4 text-[10px] font-bold tracking-widest text-zinc-500 overflow-x-auto [&::-webkit-scrollbar]:hidden whitespace-nowrap mask-linear-fade w-full">
+                <span 
+                  className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'chat' && "text-zinc-200")} 
+                  onClick={() => setTerminalTab('chat' as any)}
+                >
+                  CHAT
+                </span>
+                <span 
+                  className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'interactive' && "text-zinc-200")} 
+                  onClick={() => setTerminalTab('interactive')}
+                >
+                  TERMINAL
+                </span>
+                <span 
+                  className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'logs' && "text-zinc-200")} 
+                  onClick={() => setTerminalTab('logs')}
+                >
+                  OUTPUT
+                </span>
+                <span className="cursor-pointer hover:text-zinc-300 transition-colors">DEBUG</span>
+              </div>
+            </div>
+            
+            {/* Content Area */}
+            <div className="flex-1 overflow-hidden">
+              {terminalTab === 'chat' || !(terminalTab === 'interactive' || terminalTab === 'logs') ? (
+                <ScrollArea className="h-full px-4 pb-3">
+                  <div className="space-y-3 pt-2">
+                    {/* Architect Message 1 */}
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">Analyzing requirements for new auth module...</div>
+                      </div>
+                    </div>
 
-      {/* 3. Terminal Panel (Bottom) */}
-      <div className="h-80 flex flex-col bg-[#18181b] border-t border-black">
-        <div className="h-8 flex items-center justify-between px-4 bg-[#18181b]">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-6 text-[10px] font-bold tracking-widest text-zinc-500">
-              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'interactive' && "text-zinc-200")} onClick={() => setTerminalTab('interactive')}>TERMINAL</span>
-              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'logs' && "text-zinc-200")} onClick={() => setTerminalTab('logs')}>OUTPUT</span>
-              <span className="cursor-pointer hover:text-zinc-300 transition-colors">DEBUG</span>
-              <span className="cursor-pointer hover:text-zinc-300 transition-colors">CONSOLE</span>
+                    {/* Architect Message 2 */}
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">Plan created. Using JWT + OAuth2 strategy.</div>
+                      </div>
+                    </div>
+
+                    {/* Dev Message */}
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400 shrink-0 mt-0.5">D</div>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">Dev</div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">Received plan. Starting implementation.</div>
+                      </div>
+                    </div>
+
+                    {/* QA Message */}
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-400 shrink-0 mt-0.5">Q</div>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">QA</div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">Test suite ready. Waiting for build.</div>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              ) : terminalTab === 'logs' ? (
+                <LiveTerminal />
+              ) : (
+                projectId && <InteractiveTerminal projectId={projectId} />
+              )}
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-             <div className="flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-               <span className="text-[10px] font-mono text-zinc-500">Node.js v20.14.0</span>
-             </div>
-             <div className="h-3 w-[1px] bg-white/5" />
-             <ChevronDown 
-               className={cn("h-3 w-3 text-zinc-600 cursor-pointer hover:text-zinc-400 transition-transform", !isTerminalOpen && "rotate-180")} 
-               onClick={() => setIsTerminalOpen(!isTerminalOpen)}
-             />
-          </div>
         </div>
 
-        {isTerminalOpen && (
-          <div className="flex-1 overflow-hidden bg-[#1e1e1e]">
-            {terminalTab === 'logs' ? (
-              <LiveTerminal />
-            ) : (
-              projectId && <InteractiveTerminal projectId={projectId} />
-            )}
-          </div>
-        )}
       </div>
 
     </div>
@@ -569,7 +564,7 @@ function WorkspaceContent() {
 export default function WorkspacePage() {
   return (
     <React.Suspense fallback={
-      <div className="h-screen bg-zinc-950 flex items-center justify-center text-zinc-500 font-mono">
+      <div className="h-screen bg-background flex items-center justify-center text-zinc-500 font-mono">
         <Loader2 className="h-6 w-6 animate-spin mr-3" />
         LOADING WORKSPACE...
       </div>

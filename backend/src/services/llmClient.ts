@@ -1,18 +1,20 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
-// Initialize Client Lazily
-let bedrockClient: BedrockRuntimeClient | null = null;
+// Initialize Clients Lazily by Region
+const bedrockClients: Record<string, BedrockRuntimeClient> = {};
 
-function getBedrockClient() {
-  if (!bedrockClient) {
-    bedrockClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
+function getBedrockClient(region: string = process.env.AWS_REGION || "us-east-1") {
+  if (!bedrockClients[region]) {
+    console.log(`[LLM] Initializing Bedrock client for region: ${region}`);
+    bedrockClients[region] = new BedrockRuntimeClient({ region });
   }
-  return bedrockClient;
+  return bedrockClients[region];
 }
 
 export interface ModelConfig {
   provider: "bedrock";
   model: string;
+  region?: string; // Optional region override
   temperature: number;
   max_tokens: number;
   estimated_cost_per_1k_tokens_usd: number;
@@ -85,9 +87,18 @@ async function invokeBedrock(config: ModelConfig, system: string, user: string):
       ]
     };
   } 
-  // 2. DeepSeek R1 (via Bedrock Inference Profile)
-  // Uses prompt format and returns choices array
-  // Matches: "deepseek.r1-v1:0" or ARN containing "deepseek"
+  // 2. DeepSeek V3 (Chat Format)
+  else if (config.model.includes("deepseek.v3")) {
+    payload = {
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user }
+      ],
+      max_tokens: config.max_tokens,
+      temperature: config.temperature
+    };
+  }
+  // 3. DeepSeek R1 (Prompt Format - Legacy/Specific)
   else if (config.model.toLowerCase().includes("deepseek")) {
      payload = {
        prompt: `${system}\n\n${user}`,
@@ -95,7 +106,7 @@ async function invokeBedrock(config: ModelConfig, system: string, user: string):
        temperature: config.temperature
      };
   }
-  // 3. Meta Llama 2/3
+  // 4. Meta Llama 2/3
   else if (config.model.includes("meta.llama")) {
     const prompt = `[INST] <<SYS>>\n${system}\n<</SYS>>\n\n${user} [/INST]`;
     payload = {
@@ -104,7 +115,7 @@ async function invokeBedrock(config: ModelConfig, system: string, user: string):
       temperature: config.temperature
     };
   }
-  // 4. Amazon Titan
+  // 5. Amazon Titan
   else if (config.model.includes("amazon.titan")) {
     payload = {
       inputText: `${system}\n\n${user}`,
@@ -134,7 +145,7 @@ async function invokeBedrock(config: ModelConfig, system: string, user: string):
       body: JSON.stringify(payload)
     });
 
-    const response = await getBedrockClient().send(command);
+    const response = await getBedrockClient(config.region).send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
     return parseResponse(responseBody);
 
@@ -153,7 +164,12 @@ function parseResponse(responseBody: any): string {
   if (responseBody.content && Array.isArray(responseBody.content)) {
     return responseBody.content[0].text; // Claude 3/3.5
   } else if (responseBody.choices && Array.isArray(responseBody.choices)) {
-    return responseBody.choices[0].text; // DeepSeek R1
+    // DeepSeek V3 (Chat)
+    if (responseBody.choices[0].message && responseBody.choices[0].message.content) {
+      return responseBody.choices[0].message.content;
+    }
+    // DeepSeek R1 (Prompt)
+    return responseBody.choices[0].text; 
   } else if (responseBody.generation) {
     return responseBody.generation; // Llama
   } else if (responseBody.results) {

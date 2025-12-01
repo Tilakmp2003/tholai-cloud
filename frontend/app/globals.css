@@ -90,53 +90,53 @@
 
 /* Premium Dark Mode (Default) */
 .dark {
-  /* Deep Space Background */
-  --background: oklch(0.10 0.02 240); 
-  --foreground: oklch(0.985 0 0);
+  /* Deep Space Background - Richer, less "flat black" */
+  --background: oklch(0.12 0.01 240); 
+  --foreground: oklch(0.98 0 0);
 
-  /* Glass Cards */
-  --card: oklch(0.15 0.03 240 / 0.6);
-  --card-foreground: oklch(0.985 0 0);
+  /* Glass Cards - More translucent, premium feel */
+  --card: oklch(0.17 0.02 240 / 0.7);
+  --card-foreground: oklch(0.98 0 0);
   
-  --popover: oklch(0.15 0.03 240 / 0.9);
-  --popover-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.15 0.02 240 / 0.95);
+  --popover-foreground: oklch(0.98 0 0);
 
-  /* Neon Blue Primary */
-  --primary: oklch(0.65 0.2 240); 
+  /* Neon Blue/Violet Primary - Vibrant but professional */
+  --primary: oklch(0.65 0.22 260); 
   --primary-foreground: oklch(1 0 0);
 
-  /* Electric Purple Secondary */
-  --secondary: oklch(0.30 0.1 280);
-  --secondary-foreground: oklch(0.985 0 0);
+  /* Electric Cyan Secondary */
+  --secondary: oklch(0.75 0.15 190);
+  --secondary-foreground: oklch(0.12 0.01 240);
 
-  --muted: oklch(0.20 0.02 240);
+  --muted: oklch(0.25 0.02 240);
   --muted-foreground: oklch(0.70 0.02 240);
   
-  --accent: oklch(0.25 0.05 240);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.25 0.05 260);
+  --accent-foreground: oklch(0.98 0 0);
   
   --destructive: oklch(0.6 0.25 25);
   
-  /* Subtle Borders */
-  --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.1);
-  --ring: oklch(0.65 0.2 240);
+  /* Subtle Borders - Barely there */
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.08);
+  --ring: oklch(0.65 0.22 260);
 
-  /* Charts */
-  --chart-1: oklch(0.65 0.2 240); /* Blue */
-  --chart-2: oklch(0.70 0.2 300); /* Purple */
-  --chart-3: oklch(0.75 0.2 180); /* Cyan */
-  --chart-4: oklch(0.80 0.2 50);  /* Gold */
-  --chart-5: oklch(0.60 0.2 340); /* Pink */
+  /* Charts - Harmonious Palette */
+  --chart-1: oklch(0.65 0.22 260); /* Violet */
+  --chart-2: oklch(0.75 0.15 190); /* Cyan */
+  --chart-3: oklch(0.85 0.12 85);  /* Amber */
+  --chart-4: oklch(0.60 0.20 340); /* Pink */
+  --chart-5: oklch(0.70 0.15 140); /* Emerald */
 
-  --sidebar: oklch(0.12 0.02 240);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.65 0.2 240);
+  --sidebar: oklch(0.11 0.01 240);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.65 0.22 260);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.20 0.03 240);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 0.1);
-  --sidebar-ring: oklch(0.65 0.2 240);
+  --sidebar-accent: oklch(0.20 0.03 260);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(1 0 0 / 0.05);
+  --sidebar-ring: oklch(0.65 0.22 260);
 }
 
 @layer base {
@@ -145,21 +145,21 @@
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary-foreground;
-    /* Force Dark Mode by default for the premium feel if system preference isn't set, 
-       but usually we rely on a provider. For now, we'll assume the app wraps in 'dark' class 
-       or we set it on the body if needed. */
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl;
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl;
   }
   .glass-hover {
-    @apply hover:bg-white/10 hover:border-white/20 transition-all duration-300;
+    @apply hover:bg-white/[0.08] hover:border-white/[0.15] transition-all duration-300;
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400;
+  }
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500;
   }
 }
 
@@ -184,7 +184,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ring);
+  background: var(--muted-foreground);
 }
 
 ::-webkit-scrollbar-corner {

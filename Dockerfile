@@ -15,7 +15,7 @@ WORKDIR /app/backend
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 # Force rebuild of native modules (like node-pty) for Linux
 # Force rebuild of native modules (like node-pty) for Linux
-RUN npm install --build-from-source
+RUN npm install --build-from-source --legacy-peer-deps
 
 # Copy full backend source (excluding node_modules via .dockerignore, but just in case)
 COPY backend/ .

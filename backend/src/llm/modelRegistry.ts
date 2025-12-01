@@ -87,11 +87,39 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
   },
 };
 
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
 /**
- * Get default model config for a role
+ * Get model config for a role from the database
  */
-export function getDefaultModelConfig(role: string): ModelConfig {
-  return RoleModelDefaults[role] || RoleModelDefaults.MidDev || {
+export async function getAgentConfig(role: string): Promise<ModelConfig> {
+  try {
+    const agent = await prisma.agent.findFirst({
+      where: { role }
+    });
+
+    if (agent && agent.modelConfig) {
+      const config = agent.modelConfig as any;
+      // Use primary config by default
+      const primary = config.primary;
+      return {
+        provider: primary.provider,
+        model: primary.model,
+        maxTokens: primary.max_tokens,
+        temperature: primary.temperature,
+        region: primary.region,
+        estimatedCost: primary.estimated_cost_per_1k_tokens_usd
+      };
+    }
+  } catch (error) {
+    console.error(`[ModelRegistry] Failed to fetch config for ${role}:`, error);
+  }
+
+  // Fallback if DB fails or agent not found
+  console.warn(`[ModelRegistry] Using fallback default for ${role}`);
+  return RoleModelDefaults[role] || {
     provider: 'groq',
     model: 'llama-3.3-70b-versatile',
     maxTokens: 3072,

@@ -1,6 +1,6 @@
 import { PrismaClient, Task, TaskStatus } from '@prisma/client';
 import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { getAgentConfig } from '../llm/modelRegistry';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +29,7 @@ OUTPUT JSON ONLY:
 }
 `;
 
-    const config = getDefaultModelConfig('JuniorDev');
+    const config = await getAgentConfig('JuniorDev');
     const response = await callLLM(config, [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: "Implement this feature." }

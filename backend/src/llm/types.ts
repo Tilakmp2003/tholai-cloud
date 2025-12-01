@@ -9,6 +9,8 @@ export interface ModelConfig {
   model: string;
   maxTokens: number;
   temperature: number;
+  region?: string;
+  estimatedCost?: number;
 }
 
 export interface LLMMessage {

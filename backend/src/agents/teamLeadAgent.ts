@@ -1,6 +1,6 @@
 import { PrismaClient, Task, TaskStatus } from '@prisma/client';
 import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { getAgentConfig } from '../llm/modelRegistry';
 
 const prisma = new PrismaClient();
 
@@ -84,7 +84,7 @@ OUTPUT JSON ONLY:
 
     const systemPrompt = isDesignTask ? DESIGN_REVIEW_PROMPT : CODE_REVIEW_PROMPT;
 
-    const config = getDefaultModelConfig('TeamLead');
+    const config = await getAgentConfig('TeamLead');
     const response = await callLLM(config, [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: "Review this task output." }

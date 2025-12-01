@@ -18,7 +18,7 @@ import {
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { LiveTerminal } from '@/components/LiveTerminal';
+
 
 // --- Configuration ---
 
@@ -140,8 +140,6 @@ export default function PipelinePage() {
           </div>
         </div>
         
-        {/* Live Terminal Sidebar */}
-        <LiveTerminal />
       </div>
     </div>
   );

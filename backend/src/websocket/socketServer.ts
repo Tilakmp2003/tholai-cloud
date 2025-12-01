@@ -14,8 +14,13 @@ export function initializeWebSocket(httpServer: HTTPServer) {
     cors: {
       origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+        if (!origin) {
+          console.log('[WebSocket] Allowing no-origin request');
+          return callback(null, true);
+        }
         
+        console.log('[WebSocket] Checking origin:', origin);
+
         const allowedOrigins = [
           'http://localhost:3000',
           'http://localhost:3001',
@@ -27,6 +32,7 @@ export function initializeWebSocket(httpServer: HTTPServer) {
         if (allowedOrigins.indexOf(origin) !== -1 || 
             origin.endsWith('.amplifyapp.com') || 
             origin.endsWith('.cloudfront.net')) {
+          console.log('[WebSocket] Allowed origin:', origin);
           callback(null, true);
         } else {
           console.log('[WebSocket] Blocked by CORS:', origin);
