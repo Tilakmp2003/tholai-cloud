@@ -44,6 +44,7 @@
     "recast": "^0.23.11",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "http-proxy-middleware": "^2.0.6",
     "uuid": "9.0.1"
   },
   "devDependencies": {
@@ -51,6 +52,7 @@
     "@types/cors": "^2.8.19",
     "@types/dockerode": "^3.3.47",
     "@types/express": "^5.0.5",
+    "@types/http-proxy-middleware": "^2.0.2",
     "@types/node": "^24.10.1",
     "@types/uuid": "^10.0.0",
     "ts-node": "^10.9.2",

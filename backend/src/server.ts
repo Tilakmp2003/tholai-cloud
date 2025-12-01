@@ -16,6 +16,8 @@ import reviewsRouter from './routes/reviews';
 import auditRouter from './routes/audit';
 import { initializeWebSocket } from './websocket/socketServer';
 import { memoryRetention } from './services/memoryRetention';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import { workspaceManager } from './services/workspaceManager';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -62,6 +64,48 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// --- Proxy Middleware for Previews ---
+// Must be before body parsers if we were proxying POSTs, but for preview (GET) it's fine here.
+// Actually, for better compatibility, let's place it before express.json() if possible, 
+// but since we already have express.json() above, we just need to ensure we don't consume body if not needed.
+// However, standard Next.js preview is mostly GET.
+
+app.use('/api/preview', createProxyMiddleware({
+  target: 'http://localhost:3000', // Default fallback, overridden by router
+  changeOrigin: true,
+  ws: true, // Support WebSockets for HMR
+  router: async (req) => {
+    try {
+      // Extract projectId from path: /api/preview/PROJECT_ID/...
+      // Since we mounted at /api/preview, req.url starts with /PROJECT_ID
+      const matches = req.url.match(/^\/([^\/]+)/);
+      if (matches && matches[1]) {
+        const projectId = matches[1];
+        const status = await workspaceManager.getPreviewStatus(projectId);
+        if (status.isActuallyRunning && status.devPort) {
+          console.log(`[Proxy] Forwarding ${projectId} to port ${status.devPort}`);
+          return `http://localhost:${status.devPort}`;
+        }
+      }
+    } catch (err) {
+      console.error('[Proxy] Router error:', err);
+    }
+    return 'http://localhost:4000'; // Fallback to self (will likely 404)
+  },
+  pathRewrite: (path, req) => {
+    // Remove /api/preview/PROJECT_ID from the path
+    // Example: /api/preview/123/about -> /about
+    return path.replace(/^\/api\/preview\/[^\/]+/, '') || '/';
+  },
+  onError: (err, req, res) => {
+    console.error('[Proxy] Error:', err);
+    res.status(502).send('Preview Unavailable');
+  }
+}));
+
+
+
+
 app.use('/api', router);
 app.use('/api/context-request', contextRequestRouter);
 app.use('/api/dashboard', dashboardRouter);
@@ -87,7 +131,7 @@ import './agents/runner'; // Start Autonomous Agents Loop
 const httpServer = createServer(app);
 initializeWebSocket(httpServer);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket ready for real-time updates`);
   
