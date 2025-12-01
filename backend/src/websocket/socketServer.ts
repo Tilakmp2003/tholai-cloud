@@ -12,13 +12,8 @@ let io: SocketIOServer | null = null;
 export function initializeWebSocket(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: (origin, callback) => {
-        // Allow all origins for now to fix 403 Forbidden on App Runner
-        console.log('[WebSocket] Allowing origin:', origin);
-        callback(null, true);
-      },
-      methods: ['GET', 'POST'],
-      credentials: true
+      origin: '*', // Allow ALL origins (Nuclear option for debugging)
+      methods: ['GET', 'POST']
     }
   });
 
