@@ -4,6 +4,19 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
+import { seedAgents } from '../scripts/seed';
+
+// POST /api/admin/seed
+router.post('/seed', async (req, res) => {
+  try {
+    const result = await seedAgents();
+    res.json(result);
+  } catch (error) {
+    console.error('Seeding failed:', error);
+    res.status(500).json({ error: 'Seeding failed' });
+  }
+});
+
 // GET /api/admin/kpis
 router.get('/kpis', async (req, res) => {
   try {
