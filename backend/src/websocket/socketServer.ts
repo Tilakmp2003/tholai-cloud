@@ -13,8 +13,13 @@ export function initializeWebSocket(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
     transports: ['polling'], // Force polling for App Runner compatibility
     cors: {
-      origin: '*', // Allow all origins for debugging
-      methods: ['GET', 'POST']
+      origin: [
+        'https://main.d1xncmoa82vznf.amplifyapp.com',
+        'http://localhost:3000',
+        'http://localhost:3001'
+      ],
+      methods: ['GET', 'POST'],
+      credentials: true
     }
   });
 
