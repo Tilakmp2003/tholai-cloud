@@ -11,8 +11,9 @@ let io: SocketIOServer | null = null;
 
 export function initializeWebSocket(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
+    transports: ['polling'], // Force polling for App Runner compatibility
     cors: {
-      origin: '*', // Allow ALL origins (Nuclear option for debugging)
+      origin: '*', // Allow all origins for debugging
       methods: ['GET', 'POST']
     }
   });
