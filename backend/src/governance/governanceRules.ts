@@ -249,6 +249,11 @@ function getPreviousRole(currentRole: string): string | null {
 /**
  * Apply governance decision to database
  */
+import { emitLog, emitGovernanceEvent } from '../websocket/socketServer';
+
+/**
+ * Apply governance decision to database
+ */
 export async function applyGovernanceDecision(
   agentId: string, 
   decision: GovernanceDecision,
@@ -257,7 +262,7 @@ export async function applyGovernanceDecision(
   if (decision.action === 'NONE') return;
 
   // Log the governance event
-  await prisma.governanceEvent.create({
+  const event = await prisma.governanceEvent.create({
     data: {
       agentId,
       taskId: taskId || null,
@@ -268,6 +273,9 @@ export async function applyGovernanceDecision(
     }
   });
 
+  // Emit real-time event
+  emitGovernanceEvent(event);
+
   // Apply role changes
   if (decision.newRole) {
     await prisma.agent.update({
@@ -277,7 +285,9 @@ export async function applyGovernanceDecision(
       }
     });
 
-    console.log(`[Governance] ${decision.action}: Agent ${agentId} ${decision.previousRole} → ${decision.newRole}`);
+    const logMsg = `[Governance] ${decision.action}: Agent ${agentId} ${decision.previousRole} → ${decision.newRole}`;
+    console.log(logMsg);
+    emitLog(logMsg);
   }
 
   // Handle termination
@@ -301,11 +311,15 @@ export async function applyGovernanceDecision(
       }
     });
 
-    console.log(`[Governance] TERMINATED: Agent ${agentId} - ${decision.reason}`);
+    const logMsg = `[Governance] TERMINATED: Agent ${agentId} - ${decision.reason}`;
+    console.log(logMsg);
+    emitLog(logMsg);
   }
 
   // Handle warnings
   if (decision.action === 'WARNING') {
-    console.warn(`[Governance] WARNING: Agent ${agentId} - ${decision.reason}`);
+    const logMsg = `[Governance] WARNING: Agent ${agentId} - ${decision.reason}`;
+    console.warn(logMsg);
+    emitLog(logMsg);
   }
 }
