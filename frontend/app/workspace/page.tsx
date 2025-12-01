@@ -347,31 +347,74 @@ function WorkspaceContent() {
       {/* --- Main Layout --- */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* 1. Sidebar (File Explorer) */}
+        {/* 1. Sidebar (File Explorer & Agent Chat) */}
         <div className="w-64 border-r border-white/5 bg-zinc-950/50 flex flex-col shrink-0">
-          <div className="h-9 flex items-center px-4 border-b border-white/5">
-            <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Explorer</span>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="py-2">
-              {isLoadingTree ? (
-                <div className="flex items-center justify-center py-8 text-zinc-600">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span className="text-xs font-mono">SCANNING...</span>
-                </div>
-              ) : (
-                fileTree?.map(node => (
-                  <FileTreeItem 
-                    key={node.path} 
-                    node={node} 
-                    level={0} 
-                    onSelect={setSelectedFile} 
-                    selectedPath={selectedFile} 
-                  />
-                ))
-              )}
+          {/* Explorer Section */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="h-9 flex items-center px-4 border-b border-white/5 shrink-0">
+              <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Explorer</span>
             </div>
-          </ScrollArea>
+            <ScrollArea className="flex-1">
+              <div className="py-2">
+                {isLoadingTree ? (
+                  <div className="flex items-center justify-center py-8 text-zinc-600">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-xs font-mono">SCANNING...</span>
+                  </div>
+                ) : (
+                  fileTree?.map(node => (
+                    <FileTreeItem 
+                      key={node.path} 
+                      node={node} 
+                      level={0} 
+                      onSelect={setSelectedFile} 
+                      selectedPath={selectedFile} 
+                    />
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Agent Chat Section */}
+          <div className="h-1/3 border-t border-white/5 flex flex-col bg-zinc-900/30">
+            <div className="h-9 flex items-center px-4 border-b border-white/5 shrink-0 gap-2">
+              <Activity className="h-3 w-3 text-zinc-500" />
+              <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Agent Chat</span>
+            </div>
+            <ScrollArea className="flex-1 p-3">
+              <div className="space-y-3">
+                {/* Mock Chat Items for Visuals */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400">A</div>
+                    <span className="text-[10px] font-bold text-zinc-400">Architect</span>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-2 border border-white/5 text-[10px] text-zinc-400 leading-relaxed">
+                    Analyzing requirements for new auth module...
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400">A</div>
+                    <span className="text-[10px] font-bold text-zinc-400">Architect</span>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-2 border border-white/5 text-[10px] text-zinc-400 leading-relaxed">
+                    Plan created. Using JWT + OAuth2 strategy.
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400">D</div>
+                    <span className="text-[10px] font-bold text-zinc-400">Dev</span>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-2 border border-white/5 text-[10px] text-zinc-400 leading-relaxed">
+                    Received plan. Starting implementation.
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
         </div>
 
         {/* 2. Editor Surface */}
@@ -489,72 +532,32 @@ function WorkspaceContent() {
       </div>
 
       {/* 3. Terminal Panel (Bottom) */}
-      {/* Terminal Section */}
-      <div className="h-96 border-t border-white/5 flex flex-col bg-zinc-950/50">
-        <div 
-          className="h-9 flex items-center justify-between px-4 border-b border-white/5 cursor-pointer hover:bg-white/5"
-          onClick={() => setIsTerminalOpen(!isTerminalOpen)}
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-              <Terminal className="h-3.5 w-3.5" />
-              <span className="font-bold">TERMINAL</span>
+      <div className="h-96 border-t border-white/5 flex flex-col bg-zinc-950">
+        <div className="h-9 flex items-center justify-between px-4 border-b border-white/5 bg-zinc-900/50">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 text-[10px] font-bold tracking-widest text-zinc-500">
+              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'interactive' && "text-zinc-200 border-b-2 border-indigo-500 py-2.5")} onClick={() => setTerminalTab('interactive')}>TERMINAL</span>
+              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'logs' && "text-zinc-200 border-b-2 border-indigo-500 py-2.5")} onClick={() => setTerminalTab('logs')}>OUTPUT</span>
+              <span className="cursor-pointer hover:text-zinc-300 transition-colors">DEBUG</span>
+              <span className="cursor-pointer hover:text-zinc-300 transition-colors">CONSOLE</span>
             </div>
-            {/* Tab Switcher */}
-            {isTerminalOpen && (
-              <div className="flex items-center p-0.5 bg-zinc-900/50 border border-white/5 rounded-lg backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
-                <button
-                  className={cn(
-                    "relative px-3 py-1 text-[10px] font-medium rounded-md transition-all duration-300",
-                    terminalTab === 'logs' 
-                      ? "text-emerald-400 shadow-sm" 
-                      : "text-zinc-500 hover:text-zinc-300"
-                  )}
-                  onClick={() => setTerminalTab('logs')}
-                >
-                  {terminalTab === 'logs' && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-zinc-800 rounded-md border border-white/5"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    <Activity className="h-3 w-3" />
-                    LOGS
-                  </span>
-                </button>
-                <button
-                  className={cn(
-                    "relative px-3 py-1 text-[10px] font-medium rounded-md transition-all duration-300",
-                    terminalTab === 'interactive' 
-                      ? "text-blue-400 shadow-sm" 
-                      : "text-zinc-500 hover:text-zinc-300"
-                  )}
-                  onClick={() => setTerminalTab('interactive')}
-                >
-                  {terminalTab === 'interactive' && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-zinc-800 rounded-md border border-white/5"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    <Terminal className="h-3 w-3" />
-                    SHELL
-                  </span>
-                </button>
-              </div>
-            )}
           </div>
-          <ChevronDown className={cn("h-4 w-4 text-zinc-600 transition-transform", !isTerminalOpen && "rotate-180")} />
+          
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-1.5">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+               <span className="text-[10px] font-mono text-zinc-400">Node.js v18.16.0</span>
+             </div>
+             <div className="h-3 w-[1px] bg-white/10" />
+             <ChevronDown 
+               className={cn("h-3.5 w-3.5 text-zinc-500 cursor-pointer hover:text-zinc-300 transition-transform", !isTerminalOpen && "rotate-180")} 
+               onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+             />
+          </div>
         </div>
 
         {isTerminalOpen && (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden bg-[#1e1e1e]">
             {terminalTab === 'logs' ? (
               <LiveTerminal />
             ) : (
