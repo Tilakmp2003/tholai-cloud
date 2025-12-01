@@ -15,6 +15,7 @@ import { PrismaClient, Module } from '@prisma/client';
 import { analyzeProject, allocateAgentsForProject, getTotalAgentCount, AgentAllocation } from './agentAllocator';
 import { queryVectorDB } from './ragService';
 import { ModelConfig } from './llmClient';
+import { emitLog, emitModuleUpdate } from '../websocket/socketServer';
 
 const prisma = new PrismaClient();
 
@@ -73,6 +74,7 @@ export async function createModulesFromArchitectPlan(
             data: { projectId, name: moduleName, status: 'IN_PROGRESS' }
           });
           modules.push(projectModule);
+          emitModuleUpdate(projectModule);
         }
 
         await prisma.task.create({
@@ -164,13 +166,18 @@ export async function planProject(
     
     if (!interrogationResult.isReady) {
       console.log(`[ProjectPlanner] ❓ Requirements need clarification (${interrogationResult.questions.length} questions)`);
+      
+      // Spawn a Team Lead to handle clarification
+      console.log('[ProjectPlanner] Spawning Team Lead to handle clarification...');
+      await spawnAgents(projectId, { teamLead: 1, architect: 0, seniorDev: 0, midDev: 0, juniorDev: 0, qa: 0, security: 0, ops: 0 });
+
       return {
         needsClarification: true,
         interrogationResult,
         modules: [],
         plan: null,
-        agentCount: 0,
-        allocation: null
+        agentCount: 1,
+        allocation: { teamLead: 1 }
       };
     }
     
@@ -247,17 +254,35 @@ export async function planProject(
   console.log(`[ProjectPlanner] Created ${modules.length} modules based on architecture`);
 
   // Step 5: Initialize Git repository
-  const project = await prisma.project.findUnique({
+  // Poll for workspace path (up to 60 seconds)
+  let project = await prisma.project.findUnique({
     where: { id: projectId },
     select: { workspacePath: true, name: true }
   });
   
+  let attempts = 0;
+  while (!project?.workspacePath && attempts < 120) {
+    console.log(`[ProjectPlanner] Waiting for workspace path... (${attempts + 1}/120)`);
+    emitLog(`[System] Waiting for workspace initialization... (${attempts + 1}/120)`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { workspacePath: true, name: true }
+    });
+    attempts++;
+  }
+  
   if (project?.workspacePath) {
     console.log('[ProjectPlanner] Initializing Git repository...');
+    emitLog('[System] Initializing Git repository...');
     await gitIntegration.initRepo(project.workspacePath, project.name);
     
     // Configure approval gates for this project
     approvalGates.configureGates(projectId, approvalGates.getDefaultGates());
+    emitLog('[System] Git repository initialized and approval gates configured.');
+  } else {
+    console.warn('[ProjectPlanner] Workspace path not found after timeout. Skipping Git init.');
+    emitLog('[System] Warning: Workspace initialization timed out. Git repository not initialized.');
   }
 
   return {
