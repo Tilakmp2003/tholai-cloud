@@ -167,9 +167,9 @@ export async function planProject(
     if (!interrogationResult.isReady) {
       console.log(`[ProjectPlanner] ❓ Requirements need clarification (${interrogationResult.questions.length} questions)`);
       
-      // Spawn a Team Lead to handle clarification
-      console.log('[ProjectPlanner] Spawning Team Lead to handle clarification...');
-      await spawnAgents(projectId, { teamLead: 1, architect: 0, seniorDev: 0, midDev: 0, juniorDev: 0, qa: 0, security: 0, ops: 0 });
+      // Spawn a Team Lead and a skeleton crew to handle clarification and readiness
+      console.log('[ProjectPlanner] Spawning Team Lead and Skeleton Crew to handle clarification...');
+      await spawnAgents(projectId, { teamLead: 1, architect: 0, seniorDev: 0, midDev: 1, juniorDev: 1, qa: 0, security: 0, ops: 0 });
 
       return {
         needsClarification: true,

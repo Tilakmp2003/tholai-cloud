@@ -4,15 +4,15 @@ const prisma = new PrismaClient();
 
 export async function seedAgents() {
   const agents = [
-    { role: 'ARCHITECT', specialization: 'System Design & Tech Stack', model: 'us.deepseek.r1-v1:0', provider: 'bedrock', region: 'us-east-1' },
-    { role: 'SENIOR_DEV', specialization: 'Core Logic & Security', model: 'us.deepseek.r1-v1:0', provider: 'bedrock', region: 'us-east-1' },
-    { role: 'MID_DEV', specialization: 'Feature Implementation', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
-    { role: 'TEAM_LEAD', specialization: 'Coordination & Review', model: 'us.deepseek.r1-v1:0', provider: 'bedrock', region: 'us-east-1' },
-    { role: 'DESIGNER', specialization: 'UI/UX & CSS', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
+    { role: 'Architect', specialization: 'System Design & Tech Stack', model: 'us.deepseek.r1-v1:0', provider: 'bedrock', region: 'us-east-1' },
+    { role: 'SeniorDev', specialization: 'Core Logic & Security', model: 'us.deepseek.r1-v1:0', provider: 'bedrock', region: 'us-east-1' },
+    { role: 'MidDev', specialization: 'Feature Implementation', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
+    { role: 'TeamLead', specialization: 'Coordination & Review', model: 'us.deepseek.r1-v1:0', provider: 'bedrock', region: 'us-east-1' },
+    { role: 'Designer', specialization: 'UI/UX & CSS', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
     { role: 'QA', specialization: 'Testing & Validation', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
-    { role: 'AGENT_OPS', specialization: 'DevOps & Deployment', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
-    { role: 'CANARY', specialization: 'System Health Check', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
-    { role: 'TEST_GENERATOR', specialization: 'Test Case Creation', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' }
+    { role: 'AgentOps', specialization: 'DevOps & Deployment', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
+    { role: 'Canary', specialization: 'System Health Check', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' },
+    { role: 'TestGenerator', specialization: 'Test Case Creation', model: 'deepseek.deepseek-v3:1', provider: 'bedrock', region: 'ap-south-1' }
   ];
 
   console.log('🌱 Seeding Agents...');
