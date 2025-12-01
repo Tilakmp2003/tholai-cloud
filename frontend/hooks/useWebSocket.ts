@@ -1,39 +1,8 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { useEffect } from 'react';
+import { useWebSocket as useWebSocketContext } from '@/providers/WebSocketProvider';
 
 export function useWebSocket() {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    const socketInstance = io(SOCKET_URL, {
-      transports: ['polling', 'websocket'], // Start with polling for better reliability
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    socketInstance.on('connect', () => {
-      console.log('[WebSocket] Connected');
-      setIsConnected(true);
-    });
-
-    socketInstance.on('disconnect', () => {
-      console.log('[WebSocket] Disconnected');
-      setIsConnected(false);
-    });
-
-    setSocket(socketInstance);
-
-    return () => {
-      socketInstance.disconnect();
-    };
-  }, []);
-
-  return { socket, isConnected };
+  return useWebSocketContext();
 }
 
 // Hook for task updates
