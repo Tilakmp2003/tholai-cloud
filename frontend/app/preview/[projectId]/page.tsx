@@ -84,7 +84,7 @@ export default function LivePreview() {
   }
 
   const isRunning = status.previewStatus === 'RUNNING' && status.isActuallyRunning;
-  const previewUrl = status.devPort ? `http://localhost:${status.devPort}` : null;
+  const previewUrl = status.devPort ? `${API_URL}/api/preview/${projectId}/` : null;
 
   if (!isRunning) {
     return (

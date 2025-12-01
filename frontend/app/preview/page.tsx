@@ -55,7 +55,7 @@ export default function PreviewPage() {
 
   const activeProject = projects?.find(p => p.id === selectedProject);
   const isRunning = activeProject?.previewStatus === 'RUNNING' && activeProject?.devPort;
-  const previewUrl = isRunning ? `http://localhost:${activeProject.devPort}` : null;
+  const previewUrl = isRunning ? `${API_URL}/api/preview/${activeProject.id}/` : null;
 
   const handleRefresh = () => {
     setIsLoadingIframe(true);
@@ -69,7 +69,7 @@ export default function PreviewPage() {
     queryKey: ['project-logs', activeProject?.id],
     queryFn: async () => {
       if (!activeProject?.id) return [];
-      const res = await axios.get(`/api/workspace/${activeProject.id}/logs`);
+      const res = await axios.get(`${API_URL}/api/workspace/${activeProject.id}/logs`);
       return res.data.logs as string[];
     },
     enabled: !!activeProject && Boolean(isRunning),
