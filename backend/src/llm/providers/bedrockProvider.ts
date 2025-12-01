@@ -29,15 +29,15 @@ export async function callBedrock(
     const userContent = userMsgs.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join("\n");
 
     // 1. DeepSeek V3 (Chat Format)
-    if (model.includes("deepseek.v3")) {
+    if (model.includes("deepseek-v3")) {
       payload = {
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         max_tokens: maxTokens,
         temperature: temperature
       };
     }
-    // 2. DeepSeek R1 (Prompt Format)
-    else if (model.toLowerCase().includes("deepseek")) {
+    // 2. DeepSeek R1 (Prompt Format) - Handles "us.deepseek.r1-v1:0"
+    else if (model.includes("deepseek.r1") || model.toLowerCase().includes("deepseek-r1")) {
        payload = {
          prompt: `${systemContent}\n\n${userContent}`,
          max_tokens: maxTokens,

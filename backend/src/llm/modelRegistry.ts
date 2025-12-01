@@ -9,81 +9,90 @@
 import { ModelConfig } from './types';
 
 export const RoleModelDefaults: Record<string, ModelConfig> = {
-  // === BRAINS 🧠 (DeepSeek R1 via OpenRouter) ===
+  // === BRAINS 🧠 (DeepSeek R1 via Bedrock) ===
   // Use for strategic roles requiring deep reasoning
-  // DeepSeek R1:free is powerful and completely free!
   
   HeadAgent: {
-    provider: 'openrouter',
-    model: 'deepseek/deepseek-r1:free',
+    provider: 'bedrock',
+    model: 'us.deepseek.r1-v1:0',
     maxTokens: 4096,
     temperature: 0.2,
+    region: 'us-east-1'
   },
   
   TeamLead: {
-    provider: 'openrouter',
-    model: 'deepseek/deepseek-r1:free',
+    provider: 'bedrock',
+    model: 'us.deepseek.r1-v1:0',
     maxTokens: 4096,
     temperature: 0.2,
+    region: 'us-east-1'
   },
   
   Architect: {
-    provider: 'openrouter',
-    model: 'deepseek/deepseek-r1:free',
+    provider: 'bedrock',
+    model: 'us.deepseek.r1-v1:0',
     maxTokens: 4096,
     temperature: 0.15,
+    region: 'us-east-1'
   },
   
   SeniorDev: {
-    provider: 'openrouter',
-    model: 'deepseek/deepseek-r1:free',
+    provider: 'bedrock',
+    model: 'us.deepseek.r1-v1:0',
     maxTokens: 3584,
     temperature: 0.2,
+    region: 'us-east-1'
   },
   
-  // === HANDS 🤖 (Groq Llama 3.3 70B) ===
+  // === HANDS 🤖 (DeepSeek V3 via Bedrock) ===
   // Use for high-volume execution tasks
   
   MidDev: {
-    provider: 'groq',
-    model: 'llama-3.3-70b-versatile',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 3072,
     temperature: 0.4,
+    region: 'us-east-1'
   },
   
   JuniorDev: {
-    provider: 'groq',
-    model: 'llama-3.3-70b-versatile',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 2048,
     temperature: 0.6,
+    region: 'us-east-1'
   },
   
   QA: {
-    provider: 'openrouter',
-    model: 'deepseek/deepseek-chat',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 4096,
     temperature: 0.2,
+    region: 'us-east-1'
   },
   
   Reviewer: {
-    provider: 'groq',
-    model: 'llama-3.3-70b-versatile',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 3072,
     temperature: 0.3,
+    region: 'us-east-1'
   },
   
   Canary: {
-    provider: 'groq',
-    model: 'llama-3.3-70b-versatile',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 1024,
     temperature: 0.1,
+    region: 'us-east-1'
   },
   
   SocraticInterrogator: {
-    provider: 'groq',
-    model: 'llama-3.3-70b-versatile',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 2048,
     temperature: 0.5,
+    region: 'us-east-1'
   },
 };
 
@@ -120,9 +129,10 @@ export async function getAgentConfig(role: string): Promise<ModelConfig> {
   // Fallback if DB fails or agent not found
   console.warn(`[ModelRegistry] Using fallback default for ${role}`);
   return RoleModelDefaults[role] || {
-    provider: 'groq',
-    model: 'llama-3.3-70b-versatile',
+    provider: 'bedrock',
+    model: 'deepseek.deepseek-v3:1',
     maxTokens: 3072,
     temperature: 0.4,
+    region: 'us-east-1'
   };
 }
