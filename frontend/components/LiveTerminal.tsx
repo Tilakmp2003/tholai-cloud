@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { useWebSocket } from '@/providers/WebSocketProvider';
 import { Terminal, ShieldCheck, Activity, ChevronRight, Minimize2, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export function LiveTerminal() {
   const { logs, isConnected } = useWebSocket();
@@ -107,37 +108,36 @@ export function LiveTerminal() {
 }
 
 function formatLog(log: string) {
-  if (log.includes('[ERROR]')) {
-    return (
-      <span className="text-red-400 flex items-center gap-2">
-        <span className="bg-red-500/10 border border-red-500/20 px-1 rounded text-[9px] font-bold text-red-500">ERR</span>
-        {log.replace('[ERROR]', '')}
-      </span>
-    );
+  // Extract timestamp if present (e.g. from backend logs)
+  // But usually we add our own. If backend sends one, we might want to parse it.
+  
+  let content = log;
+  let badge = null;
+
+  if (log.includes('[ERROR]') || log.toLowerCase().includes('error:')) {
+    badge = <span className="bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold text-red-500 tracking-wider">ERR</span>;
+    content = content.replace('[ERROR]', '').replace('Error:', '');
+  } else if (log.includes('[WARN]') || log.toLowerCase().includes('warn:')) {
+    badge = <span className="bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold text-amber-500 tracking-wider">WRN</span>;
+    content = content.replace('[WARN]', '').replace('Warn:', '');
+  } else if (log.includes('[INFO]')) {
+    badge = <span className="bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold text-blue-500 tracking-wider">INF</span>;
+    content = content.replace('[INFO]', '');
+  } else if (log.includes('[Runner]') || log.includes('[System]')) {
+    badge = <span className="bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold text-emerald-500 tracking-wider">SYS</span>;
+    content = content.replace('[Runner]', '').replace('[System]', '');
+  } else if (log.includes('[Workspace]')) {
+    badge = <span className="bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold text-indigo-500 tracking-wider">WRK</span>;
+    content = content.replace('[Workspace]', '');
+  } else if (log.includes('[Next.js')) {
+    badge = <span className="bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 rounded text-[9px] font-bold text-zinc-400 tracking-wider">APP</span>;
+    // Keep the port info if useful, or clean it up
   }
-  if (log.includes('[WARN]')) {
-    return (
-      <span className="text-amber-400 flex items-center gap-2">
-        <span className="bg-amber-500/10 border border-amber-500/20 px-1 rounded text-[9px] font-bold text-amber-500">WRN</span>
-        {log.replace('[WARN]', '')}
-      </span>
-    );
-  }
-  if (log.includes('[INFO]')) {
-    return (
-      <span className="text-blue-400 flex items-center gap-2">
-        <span className="bg-blue-500/10 border border-blue-500/20 px-1 rounded text-[9px] font-bold text-blue-500">INF</span>
-        {log.replace('[INFO]', '')}
-      </span>
-    );
-  }
-  if (log.includes('[Runner]')) {
-    return (
-      <span className="text-emerald-400 flex items-center gap-2">
-        <span className="bg-emerald-500/10 border border-emerald-500/20 px-1 rounded text-[9px] font-bold text-emerald-500">SYS</span>
-        {log.replace('[Runner]', '')}
-      </span>
-    );
-  }
-  return <span className="text-zinc-300">{log}</span>;
+
+  return (
+    <span className={cn("flex items-center gap-3", badge ? "text-zinc-300" : "text-zinc-400")}>
+      {badge}
+      <span className="truncate">{content.trim()}</span>
+    </span>
+  );
 }
