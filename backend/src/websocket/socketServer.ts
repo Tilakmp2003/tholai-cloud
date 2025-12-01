@@ -13,31 +13,9 @@ export function initializeWebSocket(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) {
-          console.log('[WebSocket] Allowing no-origin request');
-          return callback(null, true);
-        }
-        
-        console.log('[WebSocket] Checking origin:', origin);
-
-        const allowedOrigins = [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'https://main.d1xncmoa82vznf.amplifyapp.com',
-          'https://d506a8lgzmu1v.cloudfront.net'
-        ];
-    
-        // Check exact match or subdomain match
-        if (allowedOrigins.indexOf(origin) !== -1 || 
-            origin.endsWith('.amplifyapp.com') || 
-            origin.endsWith('.cloudfront.net')) {
-          console.log('[WebSocket] Allowed origin:', origin);
-          callback(null, true);
-        } else {
-          console.log('[WebSocket] Blocked by CORS:', origin);
-          callback(new Error('Not allowed by CORS'));
-        }
+        // Allow all origins for now to fix 403 Forbidden on App Runner
+        console.log('[WebSocket] Allowing origin:', origin);
+        callback(null, true);
       },
       methods: ['GET', 'POST'],
       credentials: true
