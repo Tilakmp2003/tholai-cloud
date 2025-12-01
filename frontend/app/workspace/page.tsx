@@ -126,6 +126,7 @@ const FileTreeItem = ({ node, level, onSelect, selectedPath }: { node: FileNode,
 // --- Main Page Component ---
 
 function WorkspaceContent() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
   const searchParams = useSearchParams();
   const projectId = searchParams.get('project');
   const router = useRouter();
@@ -141,7 +142,7 @@ function WorkspaceContent() {
     queryKey: ['project', projectId],
     queryFn: async () => {
       if (!projectId) return null;
-      const res = await axios.get(`http://localhost:4000/api/projects`);
+      const res = await axios.get(`${API_URL}/api/projects`);
       return res.data.find((p: Project) => p.id === projectId);
     },
     enabled: !!projectId
@@ -152,7 +153,7 @@ function WorkspaceContent() {
     queryKey: ['files', projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const res = await axios.get(`http://localhost:4000/api/workspace/${projectId}/tree`);
+      const res = await axios.get(`${API_URL}/api/workspace/${projectId}/tree`);
       return res.data;
     },
     enabled: !!projectId
@@ -163,7 +164,7 @@ function WorkspaceContent() {
     queryKey: ['content', projectId, selectedFile],
     queryFn: async () => {
       if (!projectId || !selectedFile) return '';
-      const res = await axios.get(`http://localhost:4000/api/workspace/${projectId}/file?path=${selectedFile}`);
+      const res = await axios.get(`${API_URL}/api/workspace/${projectId}/file?path=${selectedFile}`);
       return res.data.content;
     },
     enabled: !!projectId && !!selectedFile
@@ -173,7 +174,7 @@ function WorkspaceContent() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!projectId || !selectedFile || unsavedContent === null) return;
-      await axios.post(`http://localhost:4000/api/workspace/${projectId}/file`, {
+      await axios.post(`${API_URL}/api/workspace/${projectId}/file`, {
         path: selectedFile,
         content: unsavedContent
       });
@@ -206,7 +207,7 @@ function WorkspaceContent() {
   const { data: projects, isLoading: isLoadingProjects } = useQuery<Project[]>({
     queryKey: ['projects'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:4000/api/projects');
+      const res = await axios.get(`${API_URL}/api/projects`);
       return res.data;
     },
     enabled: !projectId
