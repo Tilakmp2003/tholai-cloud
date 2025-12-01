@@ -52,7 +52,7 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 3072,
     temperature: 0.4,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   },
   
   JuniorDev: {
@@ -60,7 +60,7 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 2048,
     temperature: 0.6,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   },
   
   QA: {
@@ -68,7 +68,7 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 4096,
     temperature: 0.2,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   },
   
   Reviewer: {
@@ -76,7 +76,7 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 3072,
     temperature: 0.3,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   },
   
   Canary: {
@@ -84,7 +84,7 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 1024,
     temperature: 0.1,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   },
   
   SocraticInterrogator: {
@@ -92,7 +92,7 @@ export const RoleModelDefaults: Record<string, ModelConfig> = {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 2048,
     temperature: 0.5,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   },
 };
 
@@ -133,6 +133,6 @@ export async function getAgentConfig(role: string): Promise<ModelConfig> {
     model: 'deepseek.deepseek-v3:1',
     maxTokens: 3072,
     temperature: 0.4,
-    region: 'us-east-1'
+    region: 'ap-south-1'
   };
 }
