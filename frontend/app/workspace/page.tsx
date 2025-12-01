@@ -381,41 +381,41 @@ function WorkspaceContent() {
             <div className="h-9 flex items-center px-4 shrink-0 gap-2">
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Agent Chat</span>
             </div>
-            <ScrollArea className="flex-1 px-3 pb-3">
-              <div className="space-y-4">
-                {/* Architect Message */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400">A</div>
-                    <span className="text-[10px] font-bold text-zinc-400">Architect</span>
-                  </div>
-                  <div className="bg-zinc-900 rounded-md p-3 border border-white/5 text-[10px] text-zinc-400 font-mono leading-relaxed relative ml-1">
-                    <div className="absolute top-0 left-2 -mt-1 w-2 h-2 bg-zinc-900 border-t border-l border-white/5 transform rotate-45"></div>
-                    Analyzing requirements for new auth module...
+            <ScrollArea className="flex-1 px-4 pb-3">
+              <div className="space-y-3">
+                {/* Architect Message 1 */}
+                <div className="flex items-start gap-2">
+                  <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
+                    <div className="text-[10px] text-zinc-500 leading-relaxed">Analyzing requirements for new auth module...</div>
                   </div>
                 </div>
 
-                {/* Architect Plan */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400">A</div>
-                    <span className="text-[10px] font-bold text-zinc-400">Architect</span>
-                  </div>
-                  <div className="bg-zinc-900 rounded-md p-3 border border-white/5 text-[10px] text-zinc-400 font-mono leading-relaxed relative ml-1">
-                    <div className="absolute top-0 left-2 -mt-1 w-2 h-2 bg-zinc-900 border-t border-l border-white/5 transform rotate-45"></div>
-                    Plan created. Using JWT + OAuth2 strategy.
+                {/* Architect Message 2 */}
+                <div className="flex items-start gap-2">
+                  <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
+                    <div className="text-[10px] text-zinc-500 leading-relaxed">Plan created. Using JWT + OAuth2 strategy.</div>
                   </div>
                 </div>
 
                 {/* Dev Message */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400">D</div>
-                    <span className="text-[10px] font-bold text-zinc-400">Dev</span>
+                <div className="flex items-start gap-2">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400 shrink-0 mt-0.5">D</div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold text-zinc-400 mb-1">Dev</div>
+                    <div className="text-[10px] text-zinc-500 leading-relaxed">Received plan. Starting implementation.</div>
                   </div>
-                  <div className="bg-zinc-900 rounded-md p-3 border border-white/5 text-[10px] text-zinc-400 font-mono leading-relaxed relative ml-1">
-                    <div className="absolute top-0 left-2 -mt-1 w-2 h-2 bg-zinc-900 border-t border-l border-white/5 transform rotate-45"></div>
-                    Received plan. Starting implementation.
+                </div>
+
+                {/* QA Message */}
+                <div className="flex items-start gap-2">
+                  <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-400 shrink-0 mt-0.5">Q</div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold text-zinc-400 mb-1">QA</div>
+                    <div className="text-[10px] text-zinc-500 leading-relaxed">Test suite ready. Waiting for build.</div>
                   </div>
                 </div>
               </div>
