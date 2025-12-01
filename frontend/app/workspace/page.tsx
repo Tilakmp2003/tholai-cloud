@@ -348,14 +348,14 @@ function WorkspaceContent() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* 1. Sidebar (File Explorer & Agent Chat) */}
-        <div className="w-64 border-r border-white/5 bg-zinc-950/50 flex flex-col shrink-0">
+        <div className="w-64 bg-[#18181b] flex flex-col shrink-0 border-r border-white/5">
           {/* Explorer Section */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="h-9 flex items-center px-4 border-b border-white/5 shrink-0">
+            <div className="h-9 flex items-center px-4 shrink-0">
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Explorer</span>
             </div>
             <ScrollArea className="flex-1">
-              <div className="py-2">
+              <div className="py-2 px-2">
                 {isLoadingTree ? (
                   <div className="flex items-center justify-center py-8 text-zinc-600">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -376,31 +376,46 @@ function WorkspaceContent() {
             </ScrollArea>
           </div>
 
-          {/* Agent Chat Section - Fixed Height & Cleaner */}
-          <div className="h-48 border-t border-white/5 flex flex-col bg-zinc-900/20">
-            <div className="h-8 flex items-center px-4 border-b border-white/5 shrink-0 gap-2 bg-zinc-900/50">
-              <Activity className="h-3 w-3 text-zinc-600" />
-              <span className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">Agent Chat</span>
+          {/* Agent Chat Section */}
+          <div className="h-64 flex flex-col border-t border-white/5 bg-[#18181b]">
+            <div className="h-9 flex items-center px-4 shrink-0 gap-2">
+              <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Agent Chat</span>
             </div>
-            <ScrollArea className="flex-1 p-3">
-              <div className="space-y-3">
-                {/* Mock Chat Items */}
-                <div className="flex flex-col gap-1 opacity-60 hover:opacity-100 transition-opacity">
+            <ScrollArea className="flex-1 px-3 pb-3">
+              <div className="space-y-4">
+                {/* Architect Message */}
+                <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-purple-500/20 flex items-center justify-center text-[6px] font-bold text-purple-400">A</div>
-                    <span className="text-[9px] font-bold text-zinc-500">Architect</span>
+                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400">A</div>
+                    <span className="text-[10px] font-bold text-zinc-400">Architect</span>
                   </div>
-                  <div className="pl-5 text-[10px] text-zinc-400 leading-relaxed font-mono">
-                    Analyzing requirements...
+                  <div className="bg-zinc-900 rounded-md p-3 border border-white/5 text-[10px] text-zinc-400 font-mono leading-relaxed relative ml-1">
+                    <div className="absolute top-0 left-2 -mt-1 w-2 h-2 bg-zinc-900 border-t border-l border-white/5 transform rotate-45"></div>
+                    Analyzing requirements for new auth module...
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 opacity-60 hover:opacity-100 transition-opacity">
+
+                {/* Architect Plan */}
+                <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center text-[6px] font-bold text-emerald-400">D</div>
-                    <span className="text-[9px] font-bold text-zinc-500">Dev</span>
+                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400">A</div>
+                    <span className="text-[10px] font-bold text-zinc-400">Architect</span>
                   </div>
-                  <div className="pl-5 text-[10px] text-zinc-400 leading-relaxed font-mono">
-                    Starting implementation.
+                  <div className="bg-zinc-900 rounded-md p-3 border border-white/5 text-[10px] text-zinc-400 font-mono leading-relaxed relative ml-1">
+                    <div className="absolute top-0 left-2 -mt-1 w-2 h-2 bg-zinc-900 border-t border-l border-white/5 transform rotate-45"></div>
+                    Plan created. Using JWT + OAuth2 strategy.
+                  </div>
+                </div>
+
+                {/* Dev Message */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400">D</div>
+                    <span className="text-[10px] font-bold text-zinc-400">Dev</span>
+                  </div>
+                  <div className="bg-zinc-900 rounded-md p-3 border border-white/5 text-[10px] text-zinc-400 font-mono leading-relaxed relative ml-1">
+                    <div className="absolute top-0 left-2 -mt-1 w-2 h-2 bg-zinc-900 border-t border-l border-white/5 transform rotate-45"></div>
+                    Received plan. Starting implementation.
                   </div>
                 </div>
               </div>
@@ -413,8 +428,8 @@ function WorkspaceContent() {
           {selectedFile ? (
             <>
               {/* Tabs */}
-              <div className="h-9 bg-zinc-950 border-b border-white/5 flex items-center px-0">
-                <div className="h-full px-4 flex items-center gap-2 bg-[#1e1e1e] border-t-2 border-indigo-500 min-w-[150px]">
+              <div className="h-9 bg-[#18181b] flex items-center px-0 border-b border-black">
+                <div className="h-full px-4 flex items-center gap-2 bg-[#1e1e1e] min-w-[150px] border-t-2 border-indigo-500">
                   <FileIcon name={selectedFile} className="h-3.5 w-3.5" />
                   <span className="text-xs text-zinc-300 font-mono truncate">{selectedFile.split('/').pop()}</span>
                   <button 
@@ -498,15 +513,12 @@ function WorkspaceContent() {
             </>
           ) : (
             /* System Standby (Zero State) */
-            <div className="flex-1 flex items-center justify-center bg-zinc-950 relative overflow-hidden">
-               <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]" />
-               
-               <div className="relative z-10 flex flex-col items-center">
-                 <div className="w-20 h-20 border border-dashed border-zinc-800 rounded-full flex items-center justify-center mb-6 opacity-50">
-                   <div className="w-2 h-2 bg-zinc-700 rounded-full" />
+            <div className="flex-1 flex items-center justify-center bg-[#1e1e1e] relative overflow-hidden">
+               <div className="relative z-10 flex flex-col items-center opacity-30">
+                 <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
+                   <Command className="h-8 w-8 text-zinc-500" />
                  </div>
-                 <h2 className="text-zinc-600 font-mono text-[10px] tracking-[0.3em] mb-2 uppercase">System Ready</h2>
-                 <p className="text-zinc-700 font-mono text-[10px]">Select a file to begin</p>
+                 <p className="text-zinc-500 font-mono text-xs">Select a file to edit</p>
                </div>
             </div>
           )}
@@ -515,19 +527,19 @@ function WorkspaceContent() {
       </div>
 
       {/* 3. Terminal Panel (Bottom) */}
-      <div className="h-80 border-t border-white/5 flex flex-col bg-zinc-950">
-        <div className="h-8 flex items-center justify-between px-4 border-b border-white/5 bg-zinc-900/50">
+      <div className="h-80 flex flex-col bg-[#18181b] border-t border-black">
+        <div className="h-8 flex items-center justify-between px-4 bg-[#18181b]">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4 text-[10px] font-bold tracking-widest text-zinc-600">
-              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'interactive' && "text-zinc-300 border-b-2 border-indigo-500 py-2")} onClick={() => setTerminalTab('interactive')}>TERMINAL</span>
-              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'logs' && "text-zinc-300 border-b-2 border-indigo-500 py-2")} onClick={() => setTerminalTab('logs')}>OUTPUT</span>
-              <span className="cursor-pointer hover:text-zinc-400 transition-colors">DEBUG</span>
-              <span className="cursor-pointer hover:text-zinc-400 transition-colors">CONSOLE</span>
+            <div className="flex items-center gap-6 text-[10px] font-bold tracking-widest text-zinc-500">
+              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'interactive' && "text-zinc-200")} onClick={() => setTerminalTab('interactive')}>TERMINAL</span>
+              <span className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'logs' && "text-zinc-200")} onClick={() => setTerminalTab('logs')}>OUTPUT</span>
+              <span className="cursor-pointer hover:text-zinc-300 transition-colors">DEBUG</span>
+              <span className="cursor-pointer hover:text-zinc-300 transition-colors">CONSOLE</span>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-             <div className="flex items-center gap-1.5">
+             <div className="flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                <span className="text-[10px] font-mono text-zinc-500">Node.js v20.14.0</span>
              </div>
