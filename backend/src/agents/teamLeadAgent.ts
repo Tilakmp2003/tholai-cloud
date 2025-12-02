@@ -1,13 +1,17 @@
-import { PrismaClient, Task, TaskStatus } from '@prisma/client';
-import { callLLM } from '../llm/llmClient';
-import { getAgentConfig } from '../llm/modelRegistry';
+import { PrismaClient, Task, TaskStatus } from "@prisma/client";
+import { callLLM } from "../llm/llmClient";
+import { getAgentConfig } from "../llm/modelRegistry";
+import { emitTaskUpdate, emitAgentUpdate } from "../websocket/socketServer";
 
 const prisma = new PrismaClient();
 
 export class TeamLeadAgent {
-  
-  async reviewTask(task: Task, designContext: any, previousAttempts: any[]): Promise<any> {
-    const isDesignTask = task.requiredRole === 'DESIGNER';
+  async reviewTask(
+    task: Task,
+    designContext: any,
+    previousAttempts: any[]
+  ): Promise<any> {
+    const isDesignTask = task.requiredRole === "DESIGNER";
 
     const CODE_REVIEW_PROMPT = `
 You are a Team Lead Engineer (L6). Your job is to REVIEW the work of a Developer Agent.
@@ -82,75 +86,89 @@ OUTPUT JSON ONLY:
 }
 `;
 
-    const systemPrompt = isDesignTask ? DESIGN_REVIEW_PROMPT : CODE_REVIEW_PROMPT;
+    const systemPrompt = isDesignTask
+      ? DESIGN_REVIEW_PROMPT
+      : CODE_REVIEW_PROMPT;
 
-    const config = await getAgentConfig('TeamLead');
+    const config = await getAgentConfig("TeamLead");
     const response = await callLLM(config, [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: "Review this task output." }
+      { role: "system", content: systemPrompt },
+      { role: "user", content: "Review this task output." },
     ]);
 
     try {
-        const cleanResponse = response.content.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanResponse);
+      const cleanResponse = response.content
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (e) {
-        console.error("Failed to parse Team Lead response", e);
-        return { decision: "ESCALATE", feedback: [], audit_note: "JSON Parse Error" };
+      console.error("Failed to parse Team Lead response", e);
+      return {
+        decision: "ESCALATE",
+        feedback: [],
+        audit_note: "JSON Parse Error",
+      };
     }
   }
 }
 
 export async function runTeamLeadAgentOnce() {
-    // Find tasks waiting for review
-    const tasksToReview = await prisma.task.findMany({
-        where: { status: 'IN_REVIEW' },
-        take: 5 // Process a few at a time
-    });
+  // Find tasks waiting for review
+  const tasksToReview = await prisma.task.findMany({
+    where: { status: "IN_REVIEW" },
+    take: 5, // Process a few at a time
+  });
 
-    if (tasksToReview.length === 0) return;
+  if (tasksToReview.length === 0) return;
 
-    console.log(`[TeamLead] Found ${tasksToReview.length} tasks to review.`);
+  console.log(`[TeamLead] Found ${tasksToReview.length} tasks to review.`);
 
-    const agent = new TeamLeadAgent();
+  const agent = new TeamLeadAgent();
 
-    for (const task of tasksToReview) {
-        console.log(`[TeamLead] Reviewing Task ${task.id}: ${task.title}`);
-        
-        try {
-            // Fetch context (Design, History)
-            const designContext = task.designContext || {};
-            const history = (task.history as any[]) || [];
+  for (const task of tasksToReview) {
+    console.log(`[TeamLead] Reviewing Task ${task.id}: ${task.title}`);
 
-            const reviewResult = await agent.reviewTask(task, designContext, history);
+    try {
+      // Fetch context (Design, History)
+      const designContext = task.designContext || {};
+      const history = (task.history as any[]) || [];
 
-            let newStatus: TaskStatus = task.status;
-            const isDesignTask = task.requiredRole === 'DESIGNER';
-            
-            if (reviewResult.decision === 'APPROVE') {
-                console.log(`[TeamLead] ✅ Approved Task ${task.id}`);
-                newStatus = isDesignTask ? 'COMPLETED' : 'IN_QA'; // Design -> Completed, Code -> QA
-            } else if (reviewResult.decision === 'REQUEST_CHANGES') {
-                console.log(`[TeamLead] ❌ Requested Changes for Task ${task.id}`);
-                newStatus = 'IN_PROGRESS'; // Send back to Designer/Dev
-                // Note: We might want a separate status like 'NEEDS_REVISION' but IN_PROGRESS works if we re-assign
-            } else if (reviewResult.decision === 'ESCALATE') {
-                console.log(`[TeamLead] ⚠️ Escalated Task ${task.id}`);
-                newStatus = 'WAR_ROOM'; // Or some blocked state
-            }
+      const reviewResult = await agent.reviewTask(task, designContext, history);
 
-            await prisma.task.update({
-                where: { id: task.id },
-                data: {
-                    status: newStatus,
-                    reviewDecision: reviewResult.decision,
-                    reviewFeedback: reviewResult as any,
-                    lastReviewBy: 'TeamLeadAgent',
-                    lastReviewAt: new Date()
-                } as any
-            });
+      let newStatus: TaskStatus = task.status;
+      const isDesignTask = task.requiredRole === "DESIGNER";
 
-        } catch (error) {
-            console.error(`[TeamLead] Error reviewing task ${task.id}:`, error);
-        }
+      if (reviewResult.decision === "APPROVE") {
+        console.log(`[TeamLead] ✅ Approved Task ${task.id}`);
+        newStatus = isDesignTask ? "COMPLETED" : "IN_QA"; // Design -> Completed, Code -> QA
+      } else if (reviewResult.decision === "REQUEST_CHANGES") {
+        console.log(`[TeamLead] ❌ Requested Changes for Task ${task.id}`);
+        newStatus = "IN_PROGRESS"; // Send back to Designer/Dev
+        // Note: We might want a separate status like 'NEEDS_REVISION' but IN_PROGRESS works if we re-assign
+      } else if (reviewResult.decision === "ESCALATE") {
+        console.log(`[TeamLead] ⚠️ Escalated Task ${task.id}`);
+        newStatus = "WAR_ROOM"; // Or some blocked state
+      }
+
+      await prisma.task.update({
+        where: { id: task.id },
+        data: {
+          status: newStatus,
+          reviewDecision: reviewResult.decision,
+          reviewFeedback: reviewResult as any,
+          lastReviewBy: "TeamLeadAgent",
+          lastReviewAt: new Date(),
+        } as any,
+      });
+
+      // Emit WebSocket update for real-time UI
+      const updatedTask = await prisma.task.findUnique({
+        where: { id: task.id },
+      });
+      if (updatedTask) emitTaskUpdate(updatedTask);
+    } catch (error) {
+      console.error(`[TeamLead] Error reviewing task ${task.id}:`, error);
     }
+  }
 }

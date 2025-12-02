@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CommandCenter() {
-  const { agents, tasks, events: governanceEvents, metrics, governanceStats, isLoading } = useDashboardData();
+  const { agents, tasks, events: governanceEvents, logs, metrics, governanceStats, isLoading } = useDashboardData();
   const { isConnected } = useWebSocket();
   const [showNewProject, setShowNewProject] = useState(false);
 
@@ -135,16 +135,34 @@ export default function CommandCenter() {
               <span className="text-[10px] font-mono text-zinc-600">{events.length} EVENTS</span>
             </div>
             
-            <div className="flex-1 overflow-hidden relative group">
+              <div className="flex-1 overflow-hidden relative group">
                {/* Inner Glow on Hover */}
               <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
               
               <ScrollArea className="h-full">
                 <div className="p-2 space-y-1">
                   <AnimatePresence mode='popLayout'>
-                    {events.length === 0 && (
+                    {events.length === 0 && logs.length === 0 && (
                       <EmptyState icon={Terminal} label="NO LOGS DETECTED" />
                     )}
+                    {/* Display Realtime Logs First */}
+                    {logs.map((log: string, i: number) => (
+                       <motion.div
+                        key={`log-${i}`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="group flex items-center gap-3 px-4 py-1 hover:bg-white/[0.02] border-l-2 border-transparent hover:border-emerald-500/50 transition-all"
+                      >
+                        <span className="font-mono text-[10px] text-zinc-600 min-w-[50px]">
+                          LIVE
+                        </span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" />
+                        <span className="text-xs font-mono text-zinc-400 truncate flex-1">
+                          {log}
+                        </span>
+                      </motion.div>
+                    ))}
+                    {/* Then Governance Events */}
                     {events.map((event: any, i: number) => (
                       <LogItem key={event.id || i} event={event} index={i} />
                     ))}

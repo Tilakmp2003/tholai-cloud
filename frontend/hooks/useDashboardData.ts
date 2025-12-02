@@ -3,42 +3,57 @@
  * Added navigation helpers and pipeline-specific queries
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { dashboardAPI } from '@/lib/api';
-import { useWebSocket } from '@/providers/WebSocketProvider';
-import { useEffect } from 'react';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { dashboardAPI } from "@/lib/api";
+import { useWebSocket } from "@/providers/WebSocketProvider";
+import { useEffect, useState } from "react";
 
 export function useDashboardData() {
   const queryClient = useQueryClient();
   const { socket } = useWebSocket();
 
+  const [realtimeLogs, setRealtimeLogs] = useState<string[]>([]);
+
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('task:update', (updatedTask: any) => {
-      queryClient.setQueryData(['tasks'], (oldData: any) => {
+    socket.on("task:update", (updatedTask: any) => {
+      queryClient.setQueryData(["tasks"], (oldData: any) => {
         if (!oldData) return oldData;
-        // Simple invalidation for now to ensure consistency, 
-        // or we could manually update the task in the list.
-        // For "visual state transitions", manual update is better but complex.
-        // Let's invalidate for safety first, but maybe trigger a refetch.
-        return oldData; 
+        return oldData;
       });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     });
 
-    socket.on('agent:update', (updatedAgent: any) => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    socket.on("task:created", (newTask: any) => {
+      console.log("[WebSocket] New task created:", newTask.id);
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    });
+
+    socket.on("agent:update", (updatedAgent: any) => {
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+    });
+
+    socket.on("log:new", (newLog: string) => {
+      setRealtimeLogs((prev) => [newLog, ...prev].slice(0, 50));
+      queryClient.invalidateQueries({ queryKey: ["governance"] });
+    });
+
+    socket.on("module:update", (updatedModule: any) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     });
 
     return () => {
-      socket.off('task:update');
-      socket.off('agent:update');
+      socket.off("task:update");
+      socket.off("task:created");
+      socket.off("agent:update");
+      socket.off("log:new");
+      socket.off("module:update");
     };
   }, [socket, queryClient]);
 
   const agents = useQuery({
-    queryKey: ['agents'],
+    queryKey: ["agents"],
     queryFn: async () => {
       const response = await dashboardAPI.getAgents();
       return response.data.agents;
@@ -48,7 +63,7 @@ export function useDashboardData() {
   });
 
   const tasks = useQuery({
-    queryKey: ['tasks'],
+    queryKey: ["tasks"],
     queryFn: async () => {
       const response = await dashboardAPI.getTasks();
       return response.data;
@@ -57,7 +72,7 @@ export function useDashboardData() {
   });
 
   const governance = useQuery({
-    queryKey: ['governance'],
+    queryKey: ["governance"],
     queryFn: async () => {
       const response = await dashboardAPI.getGovernance();
       return response.data;
@@ -66,7 +81,7 @@ export function useDashboardData() {
   });
 
   const metrics = useQuery({
-    queryKey: ['metrics'],
+    queryKey: ["metrics"],
     queryFn: async () => {
       const response = await dashboardAPI.getMetrics();
       return response.data;
@@ -78,15 +93,20 @@ export function useDashboardData() {
     agents: agents.data || [],
     tasks: tasks.data || { stats: {}, queued: [], assigned: [], completed: [] },
     events: governance.data?.events || [],
+    logs: realtimeLogs,
     governanceStats: governance.data?.stats || {},
     metrics: metrics.data || {},
-    isLoading: agents.isLoading || tasks.isLoading || governance.isLoading || metrics.isLoading,
+    isLoading:
+      agents.isLoading ||
+      tasks.isLoading ||
+      governance.isLoading ||
+      metrics.isLoading,
   };
 }
 
 export function useEscalations() {
   return useQuery({
-    queryKey: ['escalations'],
+    queryKey: ["escalations"],
     queryFn: async () => {
       const response = await dashboardAPI.getEscalations();
       return response.data;
@@ -97,7 +117,7 @@ export function useEscalations() {
 
 export function useTaskTrace(taskId: string | null) {
   return useQuery({
-    queryKey: ['trace', taskId],
+    queryKey: ["trace", taskId],
     queryFn: async () => {
       if (!taskId) return null;
       const response = await dashboardAPI.getTrace(taskId);

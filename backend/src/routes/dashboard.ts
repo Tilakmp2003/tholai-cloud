@@ -62,6 +62,14 @@ router.get('/tasks', async (req, res) => {
             id: true,
             role: true
           }
+        },
+        traces: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            event: true,
+            createdAt: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' },

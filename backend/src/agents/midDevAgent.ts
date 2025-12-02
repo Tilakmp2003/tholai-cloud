@@ -1,12 +1,16 @@
-import { PrismaClient, Task, TaskStatus } from '@prisma/client';
-import { callLLM } from '../llm/llmClient';
-import { getAgentConfig } from '../llm/modelRegistry';
+import { PrismaClient, Task, TaskStatus } from "@prisma/client";
+import { callLLM } from "../llm/llmClient";
+import { getAgentConfig } from "../llm/modelRegistry";
+import { emitTaskUpdate, emitAgentUpdate } from "../websocket/socketServer";
 
 const prisma = new PrismaClient();
 
 export class MidDevAgent {
-
-  async fixTask(task: Task, relatedFileContent: string, qaFeedback: any): Promise<any> {
+  async fixTask(
+    task: Task,
+    relatedFileContent: string,
+    qaFeedback: any
+  ): Promise<any> {
     const systemPrompt = `
 You are a Mid-Level Developer (L4). You are in FIX-MODE.
 Your goal is to fix the reported issues in the code.
@@ -34,24 +38,31 @@ OUTPUT JSON ONLY:
 }
 `;
 
-    const config = await getAgentConfig('MidDev');
+    const config = await getAgentConfig("MidDev");
     const response = await callLLM(config, [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: "Fix the code based on feedback." }
+      { role: "system", content: systemPrompt },
+      { role: "user", content: "Fix the code based on feedback." },
     ]);
 
     try {
-        const cleanResponse = response.content.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanResponse);
+      const cleanResponse = response.content
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (e) {
-        console.error("Failed to parse MidDev response", e);
-        return { status: "FAILED", newFileContent: relatedFileContent, commitMessage: "Parse Error" };
+      console.error("Failed to parse MidDev response", e);
+      return {
+        status: "FAILED",
+        newFileContent: relatedFileContent,
+        commitMessage: "Parse Error",
+      };
     }
   }
 
   async implementTask(task: Task, designContext: any): Promise<any> {
-      // Basic implementation logic for fresh tasks
-      const systemPrompt = `
+    // Basic implementation logic for fresh tasks
+    const systemPrompt = `
 You are a Mid-Level Developer (L4). You are in IMPLEMENTATION-MODE.
 Your goal is to implement the requested feature.
 
@@ -70,89 +81,120 @@ OUTPUT JSON ONLY:
   "fileName": "suggested_filename.ts"
 }
 `;
-      const config = await getAgentConfig('MidDev');
-      const response = await callLLM(config, [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: "Implement feature." }
-      ]);
+    const config = await getAgentConfig("MidDev");
+    const response = await callLLM(config, [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: "Implement feature." },
+    ]);
 
-      try {
-          const cleanResponse = response.content.replace(/```json/g, '').replace(/```/g, '').trim();
-          return JSON.parse(cleanResponse);
-      } catch (e) {
-          return { status: "FAILED", artifact: "", fileName: "" };
-      }
+    try {
+      const cleanResponse = response.content
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+      return JSON.parse(cleanResponse);
+    } catch (e) {
+      return { status: "FAILED", artifact: "", fileName: "" };
+    }
   }
 }
 
 export async function runMidDevAgentOnce() {
-    // Find tasks assigned to MidDevs that are either ASSIGNED (new) or NEEDS_REVISION (fix)
-    const tasks = await prisma.task.findMany({
-        where: {
-            OR: [
-                { status: 'ASSIGNED', requiredRole: 'MidDev' },
-                { status: 'NEEDS_REVISION', requiredRole: 'MidDev' }
-            ]
-        },
-        take: 5
+  // Find tasks assigned to MidDevs that are either ASSIGNED (new) or NEEDS_REVISION (fix)
+  const tasks = await prisma.task.findMany({
+    where: {
+      OR: [
+        { status: "ASSIGNED", requiredRole: "MidDev" },
+        { status: "NEEDS_REVISION", requiredRole: "MidDev" },
+      ],
+    },
+    take: 5,
+  });
+
+  if (tasks.length === 0) return;
+
+  const agent = new MidDevAgent();
+
+  for (const task of tasks) {
+    console.log(`[MidDev] Processing Task ${task.id} (${task.status})`);
+
+    // Mark as IN_PROGRESS and emit WebSocket update
+    const inProgressTask = await prisma.task.update({
+      where: { id: task.id },
+      data: { status: "IN_PROGRESS" },
     });
+    emitTaskUpdate(inProgressTask);
 
-    if (tasks.length === 0) return;
+    try {
+      let result;
+      if (task.status === "NEEDS_REVISION") {
+        // FIX MODE
+        // Mock reading file content (in real app, read from file system/repo)
+        const fileContent = "// Mock file content";
+        const feedback = task.reviewFeedback || task.qaFeedback;
 
-    const agent = new MidDevAgent();
+        result = await agent.fixTask(task, fileContent, feedback);
 
-    for (const task of tasks) {
-        console.log(`[MidDev] Processing Task ${task.id} (${task.status})`);
-
-        // Mark as IN_PROGRESS
-        await prisma.task.update({ where: { id: task.id }, data: { status: 'IN_PROGRESS' } });
-
-        try {
-            let result;
-            if (task.status === 'NEEDS_REVISION') {
-                // FIX MODE
-                // Mock reading file content (in real app, read from file system/repo)
-                const fileContent = "// Mock file content"; 
-                const feedback = task.reviewFeedback || task.qaFeedback;
-                
-                result = await agent.fixTask(task, fileContent, feedback);
-                
-                if (result.status === 'FIXED') {
-                    await prisma.task.update({
-                        where: { id: task.id },
-                        data: {
-                            status: 'IN_REVIEW', // Send back to Review
-                            outputArtifact: result.newFileContent,
-                            lastAgentMessage: result.commitMessage
-                        }
-                    });
-                } else {
-                    // Failed to fix?
-                    await prisma.task.update({ where: { id: task.id }, data: { status: 'FAILED', errorMessage: "Agent failed to fix" } });
-                }
-
-            } else {
-                // IMPLEMENTATION MODE
-                const designContext = task.designContext || {};
-                result = await agent.implementTask(task, designContext);
-
-                if (result.status === 'COMPLETED') {
-                    await prisma.task.update({
-                        where: { id: task.id },
-                        data: {
-                            status: 'IN_REVIEW', // Send to Review
-                            outputArtifact: result.artifact,
-                            relatedFileName: result.fileName
-                        }
-                    });
-                } else {
-                     await prisma.task.update({ where: { id: task.id }, data: { status: 'FAILED', errorMessage: "Agent failed to implement" } });
-                }
-            }
-
-        } catch (error) {
-            console.error(`[MidDev] Error processing task ${task.id}:`, error);
-            await prisma.task.update({ where: { id: task.id }, data: { status: 'FAILED', errorMessage: String(error) } });
+        if (result.status === "FIXED") {
+          const updatedTask = await prisma.task.update({
+            where: { id: task.id },
+            data: {
+              status: "IN_REVIEW", // Send back to Review
+              outputArtifact: result.newFileContent,
+              lastAgentMessage: result.commitMessage,
+            },
+          });
+          emitTaskUpdate(updatedTask);
+        } else {
+          // Failed to fix?
+          const failedTask = await prisma.task.update({
+            where: { id: task.id },
+            data: { status: "FAILED", errorMessage: "Agent failed to fix" },
+          });
+          emitTaskUpdate(failedTask);
         }
+      } else {
+        // IMPLEMENTATION MODE
+        const designContext = task.designContext || {};
+        result = await agent.implementTask(task, designContext);
+
+        if (result.status === "COMPLETED") {
+          const completedTask = await prisma.task.update({
+            where: { id: task.id },
+            data: {
+              status: "IN_REVIEW", // Send to Review
+              outputArtifact: result.artifact,
+              relatedFileName: result.fileName,
+            },
+          });
+          emitTaskUpdate(completedTask);
+        } else {
+          const failedTask = await prisma.task.update({
+            where: { id: task.id },
+            data: {
+              status: "FAILED",
+              errorMessage: "Agent failed to implement",
+            },
+          });
+          emitTaskUpdate(failedTask);
+        }
+      }
+    } catch (error) {
+      console.error(`[MidDev] Error processing task ${task.id}:`, error);
+      const failedTask = await prisma.task.update({
+        where: { id: task.id },
+        data: { status: "FAILED", errorMessage: String(error) },
+      });
+      emitTaskUpdate(failedTask);
     }
+
+    // Mark the agent as IDLE after processing
+    if (task.assignedToAgentId) {
+      const idleAgent = await prisma.agent.update({
+        where: { id: task.assignedToAgentId },
+        data: { status: "IDLE", currentTaskId: null },
+      });
+      emitAgentUpdate(idleAgent);
+    }
+  }
 }

@@ -5,7 +5,9 @@
 
 import { PrismaClient } from '@prisma/client';
 import { AgentAllocation } from './agentAllocator';
+import { emitAgentUpdate } from '../websocket/socketServer';
 import { getAgentConfig } from '../llm/modelRegistry';
+
 
 const prisma = new PrismaClient();
 
@@ -45,7 +47,7 @@ export async function spawnAgents(
       const agentId = `proj_${projectId}_${roleKey}_${i}`;
       
       try {
-        await prisma.agent.create({
+        const agent = await prisma.agent.create({
           data: {
             id: agentId,
             role: schemaRole,
@@ -55,6 +57,8 @@ export async function spawnAgents(
             lastActiveAt: new Date(),
           },
         });
+
+        emitAgentUpdate(agent);
 
         spawnedCount++;
         console.log(`[AgentSpawner] Created ${agentId}`);

@@ -189,6 +189,7 @@ model Task {
   // Phase 4: Governance Relations
   performanceLogs   AgentPerformanceLog[]
   governanceEvents  GovernanceEvent[]
+  traces            Trace[]
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -211,6 +212,7 @@ model AllocationLog {
 model Trace {
   id        String   @id @default(uuid())
   taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
   agentId   String
   event     String
   metadata  Json?

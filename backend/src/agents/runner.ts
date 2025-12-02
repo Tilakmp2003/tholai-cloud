@@ -12,6 +12,7 @@ import { runArchitectAgentOnce } from "./architectAgent";
 import { runSeniorDevAgentOnce } from "./seniorDevAgent";
 import { runAgentOpsAgentOnce } from "./agentOpsAgent";
 import { runCanaryAgentOnce } from "./canaryAgent";
+import { dispatchTasks } from "../services/taskDispatcher";
 
 const prisma = new PrismaClient();
 
@@ -44,6 +45,10 @@ async function loop() {
       await runGovernanceLoopOnce();
     } else {
       logger.log("[Runner] 💻 Running in Local Mode (In-Process)");
+      
+      // Dispatch queued tasks to agents
+      await dispatchTasks().catch((err) => logger.error("[Runner] Dispatcher error:", err));
+
       await Promise.all([
         runArchitectAgentOnce().catch((err) => logger.error("[Runner] Architect error:", err)),
         runSeniorDevAgentOnce().catch((err) => logger.error("[Runner] SeniorDev error:", err)),

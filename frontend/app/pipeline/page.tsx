@@ -86,8 +86,17 @@ const COLUMN_STYLES: Record<string, { bg: string; gradient: string; glow: string
 
 // --- Components ---
 
+// ... (imports)
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
+
+// ... (PipelinePage and PipelineColumn remain mostly same, but pass onTaskClick)
+
 export default function PipelinePage() {
   const { tasks, isLoading } = useDashboardData();
+  const [selectedTask, setSelectedTask] = useState<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate stats
@@ -135,17 +144,24 @@ export default function PipelinePage() {
                 column={column} 
                 tasks={tasks?.[column.id] || []} 
                 index={index}
+                onTaskClick={setSelectedTask}
               />
             ))}
           </div>
         </div>
-        
       </div>
+
+      {/* Task Details Modal */}
+      <TaskDetailsModal 
+        task={selectedTask} 
+        isOpen={!!selectedTask} 
+        onClose={() => setSelectedTask(null)} 
+      />
     </div>
   );
 }
 
-function PipelineColumn({ column, tasks, index }: { column: any, tasks: any[], index: number }) {
+function PipelineColumn({ column, tasks, index, onTaskClick }: { column: any, tasks: any[], index: number, onTaskClick: (t: any) => void }) {
   const styles = COLUMN_STYLES[column.color];
 
   return (
@@ -184,7 +200,7 @@ function PipelineColumn({ column, tasks, index }: { column: any, tasks: any[], i
             </motion.div>
           ) : (
             tasks.map((task) => (
-              <TaskCard key={task.id} task={task} color={column.color} />
+              <TaskCard key={task.id} task={task} color={column.color} onClick={() => onTaskClick(task)} />
             ))
           )}
         </AnimatePresence>
@@ -193,9 +209,13 @@ function PipelineColumn({ column, tasks, index }: { column: any, tasks: any[], i
   );
 }
 
-function TaskCard({ task, color }: { task: any, color: string }) {
+function TaskCard({ task, color, onClick }: { task: any, color: string, onClick: () => void }) {
   const styles = COLUMN_STYLES[color] || COLUMN_STYLES.zinc;
   
+  // Extract latest trace
+  const latestTrace = task.traces && task.traces.length > 0 ? task.traces[0] : null;
+  const statusMessage = latestTrace ? latestTrace.event : (task.contextPacket?.summary || "Processing Task Data...");
+
   return (
     <motion.div
       layout
@@ -204,8 +224,9 @@ function TaskCard({ task, color }: { task: any, color: string }) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ y: -4, scale: 1.02, transition: { duration: 0.2 } }}
+      onClick={onClick}
       className={cn(
-        "group relative p-4 rounded-lg border border-white/10 bg-zinc-900 transition-all duration-200",
+        "group relative p-4 rounded-lg border border-white/10 bg-zinc-900 transition-all duration-200 cursor-pointer",
         `hover:${styles.glow}`,
         styles.border
       )}
@@ -220,12 +241,15 @@ function TaskCard({ task, color }: { task: any, color: string }) {
         )}
       </div>
 
-      {/* Title */}
-      <h3 className="text-sm font-medium text-zinc-100 mb-3 line-clamp-2 leading-snug">
-        {typeof task.contextPacket === 'string' 
-          ? JSON.parse(task.contextPacket)?.summary 
-          : task.contextPacket?.summary || "Processing Task Data..."}
-      </h3>
+      {/* Title / Status */}
+      <div className="mb-3">
+        <h3 className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug mb-1">
+           {task.title}
+        </h3>
+        <p className="text-xs text-zinc-400 font-mono line-clamp-2">
+           {latestTrace ? `> ${latestTrace.event}` : "Initializing..."}
+        </p>
+      </div>
 
       {/* Metadata Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-2">
@@ -249,10 +273,90 @@ function TaskCard({ task, color }: { task: any, color: string }) {
         <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-800/50 border border-white/5">
           <Cpu className="h-3 w-3 text-zinc-400" />
           <span className="text-[10px] font-mono text-zinc-300 uppercase">
-            {task.assignedTo || 'SYSTEM'}
+            {task.assignedToAgent?.role || 'SYSTEM'}
           </span>
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function TaskDetailsModal({ task, isOpen, onClose }: { task: any, isOpen: boolean, onClose: () => void }) {
+  const [traces, setTraces] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && task?.id) {
+      setLoading(true);
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/trace/${task.id}`)
+        .then(res => res.json())
+        .then(data => {
+            setTraces(data.traces || []);
+            setLoading(false);
+        })
+        .catch(err => {
+            console.error("Failed to fetch traces", err);
+            setLoading(false);
+        });
+    }
+  }, [isOpen, task]);
+
+  if (!task) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] bg-zinc-950 border-zinc-800 text-zinc-100">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <Terminal className="h-5 w-5 text-indigo-400" />
+            {task.title}
+          </DialogTitle>
+          <DialogDescription className="text-zinc-400 font-mono text-xs">
+            ID: {task.id} | AGENT: {task.assignedToAgent?.role || 'UNASSIGNED'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-4 border border-zinc-800 rounded-md bg-zinc-900/50 p-4">
+            <h4 className="text-sm font-medium text-zinc-300 mb-2 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-emerald-400" />
+                Live Agent Activity
+            </h4>
+            <ScrollArea className="h-[300px] w-full rounded-md border border-zinc-800 bg-zinc-950 p-4">
+                {loading ? (
+                    <div className="flex items-center justify-center h-full text-zinc-500 font-mono text-xs">
+                        Loading trace data...
+                    </div>
+                ) : traces.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-zinc-500 font-mono text-xs">
+                        No activity recorded yet.
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {traces.map((trace, i) => (
+                            <div key={i} className="flex gap-3 text-xs font-mono">
+                                <span className="text-zinc-500 shrink-0">
+                                    {format(new Date(trace.createdAt), 'HH:mm:ss')}
+                                </span>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-indigo-300 font-bold">
+                                        [{trace.agentId.split('_')[2] || 'AGENT'}]
+                                    </span>
+                                    <span className="text-zinc-300">
+                                        {trace.event}
+                                    </span>
+                                    {trace.metadata && (
+                                        <pre className="mt-1 p-2 bg-zinc-900 rounded text-zinc-500 overflow-x-auto">
+                                            {JSON.stringify(trace.metadata, null, 2)}
+                                        </pre>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { promisify } from 'util';
 import { PrismaClient } from '@prisma/client';
+import { emitLog } from '../websocket/socketServer';
 
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
@@ -62,15 +63,104 @@ export class WorkspaceManager {
     // 4. Create Next.js app with optimized template
     // Using --yes to skip prompts, --typescript for TS, --tailwind for styling
     try {
-      await execAsync(
-        `npx create-next-app@latest ${safeName} --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*" --use-npm --yes`,
-        { 
-          cwd: WORKSPACE_ROOT,
-          timeout: 120000 // 2 minute timeout
-        }
-      );
+      // Manual scaffolding to avoid npx hangs
+      await fs.mkdir(projectPath, { recursive: true });
+      await fs.mkdir(path.join(projectPath, 'app'), { recursive: true });
       
-      console.log(`[Workspace] ✅ Next.js app created at: ${projectPath}`);
+      // Write package.json
+      await fs.writeFile(path.join(projectPath, 'package.json'), JSON.stringify({
+        name: safeName,
+        version: '0.1.0',
+        private: true,
+        scripts: {
+          dev: 'next dev',
+          build: 'next build',
+          start: 'next start',
+          lint: 'next lint'
+        },
+        dependencies: {
+          react: '^18',
+          'react-dom': '^18',
+          next: '14.2.3',
+          'lucide-react': '^0.378.0',
+          clsx: '^2.1.1',
+          'tailwind-merge': '^2.3.0'
+        },
+        devDependencies: {
+          typescript: '^5',
+          '@types/node': '^20',
+          '@types/react': '^18',
+          '@types/react-dom': '^18',
+          postcss: '^8',
+          tailwindcss: '^3.4.1',
+          eslint: '^8',
+          'eslint-config-next': '14.2.3'
+        }
+      }, null, 2));
+
+      // Write tsconfig.json
+      await fs.writeFile(path.join(projectPath, 'tsconfig.json'), JSON.stringify({
+        compilerOptions: {
+          lib: ["dom", "dom.iterable", "esnext"],
+          allowJs: true,
+          skipLibCheck: true,
+          strict: true,
+          noEmit: true,
+          esModuleInterop: true,
+          module: "esnext",
+          moduleResolution: "bundler",
+          resolveJsonModule: true,
+          isolatedModules: true,
+          jsx: "preserve",
+          incremental: true,
+          plugins: [{ name: "next" }],
+          paths: { "@/*": ["./*"] }
+        },
+        include: ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+        exclude: ["node_modules"]
+      }, null, 2));
+
+      // Write tailwind.config.ts
+      await fs.writeFile(path.join(projectPath, 'tailwind.config.ts'), `
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+`);
+
+      // Write postcss.config.js
+      await fs.writeFile(path.join(projectPath, 'postcss.config.js'), `
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+`);
+
+      // Write next.config.mjs
+      await fs.writeFile(path.join(projectPath, 'next.config.mjs'), `
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+export default nextConfig;
+`);
+      
+      console.log(`[Workspace] ✅ Next.js app scaffolded manually at: ${projectPath}`);
 
       // --- FIRST PAINT FIX ---
       // Overwrite page.tsx with a custom "AI Corp" landing page
@@ -199,6 +289,7 @@ export default function Home() {
       // Keep last 1000 lines
       if (logs.length > 1000) logs.shift();
       projectLogs.set(projectId, logs);
+      emitLog(msg);
     };
 
     // Update status to RUNNING

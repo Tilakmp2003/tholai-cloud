@@ -1,8 +1,9 @@
-import { invokeModel, ModelConfig } from '../services/llmClient';
-import { queryVectorDB } from '../services/ragService';
-import { checkBudget } from '../services/preflightService';
-import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
+import { invokeModel, ModelConfig } from "../services/llmClient";
+import { queryVectorDB } from "../services/ragService";
+import { checkBudget } from "../services/preflightService";
+import { PrismaClient } from "@prisma/client";
+import { randomUUID } from "crypto";
+import { emitTaskUpdate, emitAgentUpdate } from "../websocket/socketServer";
 
 const prisma = new PrismaClient();
 
@@ -57,7 +58,11 @@ export interface DesignPackageContent {
   directions: DesignDirection[];
   userJourney: { step: string; action: string; outcome: string }[];
   wireframes: { screenName: string; description: string; content: string }[]; // ASCII or Mermaid
-  componentInventory: { name: string; purpose: string; complexity: 'Low' | 'Medium' | 'High' }[];
+  componentInventory: {
+    name: string;
+    purpose: string;
+    complexity: "Low" | "Medium" | "High";
+  }[];
   designSystem: DesignSystem;
   userFlowMermaid: string;
   componentStubs: DesignComponentStub[];
@@ -74,7 +79,6 @@ export async function generateDesignPackage(
   agentConfig: ModelConfig,
   ragContext: string
 ): Promise<DesignPackageContent> {
-  
   const prompt = `
     Project: ${projectName}
     Task: ${taskTitle}
@@ -86,24 +90,20 @@ export async function generateDesignPackage(
     Generate the Design Package JSON.
   `;
 
-  const response = await invokeModel(
-    agentConfig,
-    SYSTEM_PROMPT,
-    prompt
-  );
+  const response = await invokeModel(agentConfig, SYSTEM_PROMPT, prompt);
 
   let designPackageContent: DesignPackageContent;
   try {
     let content = response.text.trim();
-    const jsonStart = content.indexOf('{');
-    const jsonEnd = content.lastIndexOf('}');
+    const jsonStart = content.indexOf("{");
+    const jsonEnd = content.lastIndexOf("}");
     if (jsonStart !== -1 && jsonEnd !== -1) {
       content = content.substring(jsonStart, jsonEnd + 1);
     }
     designPackageContent = JSON.parse(content);
   } catch (e) {
-    console.error('[Designer] Failed to parse JSON:', response.text);
-    throw new Error('Failed to parse Design Package JSON');
+    console.error("[Designer] Failed to parse JSON:", response.text);
+    throw new Error("Failed to parse Design Package JSON");
   }
 
   // Create DesignPackage record
@@ -111,8 +111,8 @@ export async function generateDesignPackage(
     data: {
       projectId,
       artifactRef: `artifact://design-package-${randomUUID()}.json`, // Mock ref
-      metadata: designPackageContent as any
-    }
+      metadata: designPackageContent as any,
+    },
   });
 
   return designPackageContent;
@@ -122,24 +122,24 @@ export async function runDesignerAgentOnce() {
   // 1. Find a task assigned to DESIGNER or a generic 'design' task
   const tasks = await prisma.task.findMany({
     where: {
-      requiredRole: 'DESIGNER',
-      status: { in: ['QUEUED', 'ASSIGNED'] },
-      assignedToAgentId: null 
+      requiredRole: "DESIGNER",
+      status: { in: ["QUEUED", "ASSIGNED"] },
+      assignedToAgentId: null,
     },
     include: {
       module: {
         include: {
-          project: true
-        }
-      }
+          project: true,
+        },
+      },
     },
-    orderBy: { createdAt: 'asc' },
-    take: 1
+    orderBy: { createdAt: "asc" },
+    take: 1,
   });
 
   if (tasks.length === 0) return null;
   const task = tasks[0] as any;
-  
+
   if (!task.module || !task.module.project) {
     console.error(`[Designer] Task ${task.id} has no associated project`);
     return null;
@@ -148,7 +148,7 @@ export async function runDesignerAgentOnce() {
 
   // 2. Find the Designer Agent (Seeded)
   const agent = await prisma.agent.findFirst({
-    where: { role: 'Designer' }
+    where: { role: "Designer" },
   });
 
   if (!agent) {
@@ -159,10 +159,10 @@ export async function runDesignerAgentOnce() {
   // Claim task
   await prisma.task.update({
     where: { id: task.id },
-    data: { 
-      status: 'IN_PROGRESS', 
-      assignedToAgentId: agent.id
-    }
+    data: {
+      status: "IN_PROGRESS",
+      assignedToAgentId: agent.id,
+    },
   });
 
   console.log(`[Designer] Starting task: ${task.title}`);
@@ -170,30 +170,40 @@ export async function runDesignerAgentOnce() {
   try {
     // 3. Prepare Context & RAG
     const contextPacket = task.contextPacket as any;
-    const designBrief = contextPacket?.designBrief || task.description || "No brief provided";
-    
+    const designBrief =
+      contextPacket?.designBrief || task.description || "No brief provided";
+
     // RAG Retrieval
-    const ragResult = await queryVectorDB(task.title + " " + JSON.stringify(designBrief));
-    const ragContext = ragResult.docs.map(d => d.content).join("\n\n");
+    const ragResult = await queryVectorDB(
+      task.title + " " + JSON.stringify(designBrief)
+    );
+    const ragContext = ragResult.docs.map((d) => d.content).join("\n\n");
 
     // 4. Preflight Check
     // Estimate cost (rough)
-    const estimatedTokens = (SYSTEM_PROMPT.length + JSON.stringify(designBrief).length + ragContext.length) / 4;
-    const estimatedCost = (estimatedTokens / 1000) * ((agent.modelConfig as any)?.primary?.estimated_cost_per_1k_tokens_usd || 0.12);
+    const estimatedTokens =
+      (SYSTEM_PROMPT.length +
+        JSON.stringify(designBrief).length +
+        ragContext.length) /
+      4;
+    const estimatedCost =
+      (estimatedTokens / 1000) *
+      ((agent.modelConfig as any)?.primary?.estimated_cost_per_1k_tokens_usd ||
+        0.12);
 
     const preflight = await checkBudget(task.id, agent.id, estimatedCost);
     if (!preflight.allowed) {
       console.warn(`[Designer] Task blocked by budget: ${preflight.reason}`);
       await prisma.task.update({
         where: { id: task.id },
-        data: { status: 'BLOCKED', blockedReason: preflight.reason }
+        data: { status: "BLOCKED", blockedReason: preflight.reason },
       });
       return null;
     }
 
     // 5. Generate Design Package
     const modelConfig = (agent.modelConfig as any).primary as ModelConfig;
-    
+
     const designPackageContent = await generateDesignPackage(
       projectId,
       task.module.project.name,
@@ -204,27 +214,41 @@ export async function runDesignerAgentOnce() {
     );
 
     // 6. Update Task
-    await prisma.task.update({
+    const updatedTask = await prisma.task.update({
       where: { id: task.id },
       data: {
-        status: designPackageContent.requiresHumanReview ? 'IN_REVIEW' : 'COMPLETED',
+        status: designPackageContent.requiresHumanReview
+          ? "IN_REVIEW"
+          : "COMPLETED",
         outputArtifact: JSON.stringify(designPackageContent),
-        designContext: designPackageContent as any
-      } as any
+        designContext: designPackageContent as any,
+      } as any,
     });
+    emitTaskUpdate(updatedTask);
 
-    console.log(`[Designer] Completed task: ${task.title}. Review required: ${designPackageContent.requiresHumanReview}`);
+    // Mark agent IDLE
+    if (task.assignedToAgentId) {
+      const idleAgent = await prisma.agent.update({
+        where: { id: task.assignedToAgentId },
+        data: { status: "IDLE", currentTaskId: null },
+      });
+      emitAgentUpdate(idleAgent);
+    }
+
+    console.log(
+      `[Designer] Completed task: ${task.title}. Review required: ${designPackageContent.requiresHumanReview}`
+    );
     return designPackageContent;
-
   } catch (error: any) {
-    console.error('[Designer] Error:', error);
-    await prisma.task.update({
+    console.error("[Designer] Error:", error);
+    const failedTask = await prisma.task.update({
       where: { id: task.id },
       data: {
-        status: 'FAILED',
-        errorMessage: error.message || JSON.stringify(error)
-      } as any
+        status: "FAILED",
+        errorMessage: error.message || JSON.stringify(error),
+      } as any,
     });
+    emitTaskUpdate(failedTask);
     throw error;
   }
 }

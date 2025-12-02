@@ -20,14 +20,25 @@ export class TerminalService {
    */
   async createSession(sessionId: string, projectId: string, onData: (data: string) => void): Promise<void> {
     try {
-      // Get workspace path from database
-      const project = await prisma.project.findUnique({
+      // Poll for workspace path (up to 30 seconds)
+      let project = await prisma.project.findUnique({
         where: { id: projectId },
         select: { workspacePath: true }
       });
 
+      let attempts = 0;
+      while (!project?.workspacePath && attempts < 30) {
+        console.log(`[Terminal] Waiting for workspace path... (${attempts + 1}/30)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        project = await prisma.project.findUnique({
+          where: { id: projectId },
+          select: { workspacePath: true }
+        });
+        attempts++;
+      }
+
       if (!project?.workspacePath) {
-        throw new Error(`Project ${projectId} has no workspace path`);
+        throw new Error(`Project ${projectId} has no workspace path after 30s`);
       }
 
       const workspacePath = project.workspacePath;

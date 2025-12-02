@@ -1,25 +1,26 @@
 // @ts-nocheck
 /**
  * QA Agent
- * 
+ *
  * An expert QA engineer agent that runs multi-layered testing (Lint, Unit, Integration, Fuzz).
  * Produces structured bug reports and patch suggestions.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { callLLM } from '../llm/llmClient';
-import { getDefaultModelConfig } from '../llm/modelRegistry';
+import { PrismaClient } from "@prisma/client";
+import { callLLM } from "../llm/llmClient";
+import { getDefaultModelConfig } from "../llm/modelRegistry";
 import { workspaceManager } from "../services/workspaceManager";
 import { sandbox } from "../services/sandbox";
 import { handleQAReject } from "../services/qaHandler";
-import { confidenceRouter } from '../services/confidenceRouter';
+import { confidenceRouter } from "../services/confidenceRouter";
+import { emitTaskUpdate, emitAgentUpdate } from "../websocket/socketServer";
 
 const prisma = new PrismaClient();
 
 export interface BugReport {
   bugId: string;
   taskId: string;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   file?: string;
   lines?: number[];
   error: string;
@@ -56,8 +57,8 @@ Bug Report Schema (JSON):
 
 export async function runQAAgentOnce() {
   const tasks = await prisma.task.findMany({
-    where: { status: 'IN_QA' },
-    include: { module: true }
+    where: { status: "IN_QA" },
+    include: { module: true },
   });
 
   for (const task of tasks) {
@@ -76,106 +77,178 @@ async function runMultiLayeredTests(task: any) {
 
   if (moduleId) {
     const module = await prisma.module.findUnique({
-       where: { id: moduleId },
-       select: { projectId: true }
+      where: { id: moduleId },
+      select: { projectId: true },
     });
     projectId = module?.projectId ?? null;
   }
 
   if (!projectId) return;
 
-  console.log(`[QA] 🧪 Running Multi-Layered Tests for Project ${projectId}...`);
-  
-  const status = await workspaceManager.getPreviewStatus(projectId);
-  if (!status.workspacePath) {
-     console.error(`[QA] No workspace path found for project ${projectId}`);
-     return;
+  console.log(
+    `[QA] 🧪 Running Multi-Layered Tests for Project ${projectId}...`
+  );
+
+  let status = await workspaceManager.getPreviewStatus(projectId);
+
+  // Poll for workspace path if not ready (up to 120s)
+  let attempts = 0;
+  while (!status.workspacePath && attempts < 120) {
+    console.log(`[QA] Waiting for workspace path... (${attempts + 1}/120)`);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    status = await workspaceManager.getPreviewStatus(projectId);
+    attempts++;
   }
 
-  const containerId = await sandbox.getOrCreateSession(projectId, status.workspacePath);
-  
+  if (!status.workspacePath) {
+    console.error(
+      `[QA] No workspace path found for project ${projectId} after timeout. Skipping QA.`
+    );
+    return;
+  }
+
+  const containerId = await sandbox.getOrCreateSession(
+    projectId,
+    status.workspacePath
+  );
+
   // 1. Lint & Static Analysis
-  console.log('[QA] 🔍 Running Static Analysis (Lint/SAST)...');
-  const lintRes = await sandbox.exec(containerId, 'npm run lint -- --format json');
+  console.log("[QA] 🔍 Running Static Analysis (Lint/SAST)...");
+  const lintRes = await sandbox.exec(
+    containerId,
+    "npm run lint -- --format json"
+  );
   if (lintRes.exitCode !== 0) {
-    await reportBug(task, 'MEDIUM', 'Linting failed', lintRes.stderr || lintRes.stdout, ['npm run lint']);
+    await reportBug(
+      task,
+      "MEDIUM",
+      "Linting failed",
+      lintRes.stderr || lintRes.stdout,
+      ["npm run lint"]
+    );
     return;
   }
 
   // 2. Unit Tests
-  console.log('[QA] 🧪 Running Unit Tests...');
-  const testRes = await sandbox.exec(containerId, 'npm test -- --json');
+  console.log("[QA] 🧪 Running Unit Tests...");
+  const testRes = await sandbox.exec(containerId, "npm test -- --json");
   if (testRes.exitCode !== 0) {
-    await reportBug(task, 'HIGH', 'Unit tests failed', testRes.stderr || testRes.stdout, ['npm test']);
+    await reportBug(
+      task,
+      "HIGH",
+      "Unit tests failed",
+      testRes.stderr || testRes.stdout,
+      ["npm test"]
+    );
     return;
   }
 
   // 3. Integration Tests (Playwright/Supertest)
-  console.log('[QA] 🎭 Running Integration Tests...');
+  console.log("[QA] 🎭 Running Integration Tests...");
   // Check if integration tests exist
-  const hasIntegration = await sandbox.exec(containerId, 'ls tests/integration');
+  const hasIntegration = await sandbox.exec(
+    containerId,
+    "ls tests/integration"
+  );
   if (hasIntegration.exitCode === 0) {
-      const intRes = await sandbox.exec(containerId, 'npm run test:integration');
-      if (intRes.exitCode !== 0) {
-        await reportBug(task, 'CRITICAL', 'Integration tests failed', intRes.stderr || intRes.stdout, ['npm run test:integration']);
-        return;
-      }
+    const intRes = await sandbox.exec(containerId, "npm run test:integration");
+    if (intRes.exitCode !== 0) {
+      await reportBug(
+        task,
+        "CRITICAL",
+        "Integration tests failed",
+        intRes.stderr || intRes.stdout,
+        ["npm run test:integration"]
+      );
+      return;
+    }
   }
 
   // 4. Fuzz Testing (Fast-Check)
-  console.log('[QA] 🎲 Running Fuzz Tests...');
-  const fuzzRes = await sandbox.exec(containerId, 'npm run fuzz');
+  console.log("[QA] 🎲 Running Fuzz Tests...");
+  const fuzzRes = await sandbox.exec(containerId, "npm run fuzz");
   if (fuzzRes.exitCode !== 0) {
-      // Fuzzing failures are often edge cases, treat as High but maybe not blocking if minor?
-      // For now, block.
-      await reportBug(task, 'HIGH', 'Fuzz testing found edge cases', fuzzRes.stderr || fuzzRes.stdout, ['npm run fuzz']);
-      return;
+    // Fuzzing failures are often edge cases, treat as High but maybe not blocking if minor?
+    // For now, block.
+    await reportBug(
+      task,
+      "HIGH",
+      "Fuzz testing found edge cases",
+      fuzzRes.stderr || fuzzRes.stdout,
+      ["npm run fuzz"]
+    );
+    return;
   }
 
   // 5. Mutation Testing (Stryker) - Only for high complexity or critical paths
   // Check budget or complexity before running
   if (task.complexityScore && task.complexityScore > 70) {
-      console.log('[QA] 🧬 Running Mutation Tests (Stryker)...');
-      const mutRes = await sandbox.exec(containerId, 'npx stryker run');
-      if (mutRes.exitCode !== 0) {
-          // Mutation score too low?
-          await reportBug(task, 'MEDIUM', 'Mutation score below threshold', mutRes.stdout, ['npx stryker run']);
-          return;
-      }
+    console.log("[QA] 🧬 Running Mutation Tests (Stryker)...");
+    const mutRes = await sandbox.exec(containerId, "npx stryker run");
+    if (mutRes.exitCode !== 0) {
+      // Mutation score too low?
+      await reportBug(
+        task,
+        "MEDIUM",
+        "Mutation score below threshold",
+        mutRes.stdout,
+        ["npx stryker run"]
+      );
+      return;
+    }
   }
-  
+
   console.log(`[QA] ✅ All Checks Passed! Proceeding to Approval.`);
-  
-  const existingFeedback = task.reviewFeedback as any || {};
-  await prisma.task.update({
-      where: { id: task.id },
-      data: {
-        status: 'COMPLETED',
-        reviewFeedback: {
-          ...existingFeedback,
-          qa: "Auto-QA: Lint, Unit, Integration, Fuzz, and Mutation Tests Passed.",
-          qaTimestamp: new Date().toISOString()
-        }
-      }
+
+  const existingFeedback = (task.reviewFeedback as any) || {};
+  const completedTask = await prisma.task.update({
+    where: { id: task.id },
+    data: {
+      status: "COMPLETED",
+      reviewFeedback: {
+        ...existingFeedback,
+        qa: "Auto-QA: Lint, Unit, Integration, Fuzz, and Mutation Tests Passed.",
+        qaTimestamp: new Date().toISOString(),
+      },
+    },
   });
+  emitTaskUpdate(completedTask);
+
+  // Mark agent as IDLE if assigned
+  if (task.assignedToAgentId) {
+    const idleAgent = await prisma.agent.update({
+      where: { id: task.assignedToAgentId },
+      data: { status: "IDLE", currentTaskId: null },
+    });
+    emitAgentUpdate(idleAgent);
+  }
 }
 
-async function reportBug(task: any, severity: string, errorMsg: string, details: string, reproSteps: string[]) {
+async function reportBug(
+  task: any,
+  severity: string,
+  errorMsg: string,
+  details: string,
+  reproSteps: string[]
+) {
   console.log(`[QA] ❌ ${severity} Bug Detected: ${errorMsg}`);
-  
+
   // Ask LLM for structured analysis and patch
-  const config = getDefaultModelConfig('QA');
+  const config = getDefaultModelConfig("QA");
   let bugReport: BugReport;
 
   try {
     const analysis = await callLLM(config, [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: `Analyze this failure and return a JSON BugReport:\nError: ${errorMsg}\nDetails: ${details}` }
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: `Analyze this failure and return a JSON BugReport:\nError: ${errorMsg}\nDetails: ${details}`,
+      },
     ]);
-    
-    const cleaned = analysis.content.replace(/```json|```/g, '').trim();
+
+    const cleaned = analysis.content.replace(/```json|```/g, "").trim();
     bugReport = JSON.parse(cleaned);
-    
+
     // Ensure bugId and timestamp are present
     bugReport.bugId = bugReport.bugId || `BUG-${Date.now()}`;
     bugReport.timestamp = new Date().toISOString();
@@ -188,10 +261,9 @@ async function reportBug(task: any, severity: string, errorMsg: string, details:
         taskId: task.id,
         severity: bugReport.severity,
         confidence: bugReport.confidence || 0,
-        suggestedPatch: bugReport.suggestedPatch
+        suggestedPatch: bugReport.suggestedPatch,
       });
     }
-
   } catch (e) {
     console.error("Failed to generate/parse bug report:", e);
     // Fallback if LLM fails
@@ -199,32 +271,38 @@ async function reportBug(task: any, severity: string, errorMsg: string, details:
       bugId: `BUG-${Date.now()}`,
       taskId: task.id,
       severity: severity as any,
-      file: '',
+      file: "",
       lines: [],
       error: errorMsg,
       reproSteps,
       stackTrace: details,
       suggestedPatch: "Please fix the errors shown in the logs.",
       confidence: 0.0,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     // Still route to War Room if critical
-    if (severity === 'CRITICAL') {
-         await confidenceRouter.routeByConfidence({
-            bugId: bugReport.bugId,
-            taskId: task.id,
-            severity: 'CRITICAL',
-            confidence: 0,
-            suggestedPatch: ''
-         });
+    if (severity === "CRITICAL") {
+      await confidenceRouter.routeByConfidence({
+        bugId: bugReport.bugId,
+        taskId: task.id,
+        severity: "CRITICAL",
+        confidence: 0,
+        suggestedPatch: "",
+      });
     }
   }
 
   await handleQAReject({
     taskId: task.id,
-    reviewerAgentId: 'qa_expert_v2',
-    failingFiles: bugReport.file ? [bugReport.file] : [], 
-    instruction: `QA Failed (${severity}): ${bugReport.error}\n\nReproduction:\n${bugReport.reproSteps.join('\n')}\n\nSuggested Patch:\n${bugReport.suggestedPatch}\n\nDetails:\n${details}`
+    reviewerAgentId: "qa_expert_v2",
+    failingFiles: bugReport.file ? [bugReport.file] : [],
+    instruction: `QA Failed (${severity}): ${
+      bugReport.error
+    }\n\nReproduction:\n${bugReport.reproSteps.join(
+      "\n"
+    )}\n\nSuggested Patch:\n${
+      bugReport.suggestedPatch
+    }\n\nDetails:\n${details}`,
   });
 }

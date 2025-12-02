@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { invokeModel, ModelConfig } from "../services/llmClient";
 import { workspaceManager } from "../services/workspaceManager";
 import { randomUUID } from "crypto";
+import { emitTaskUpdate } from "../websocket/socketServer";
 
 const prisma = new PrismaClient();
 
@@ -9,7 +10,7 @@ export async function runWarRoomAgentOnce() {
   // 1. Find a task stuck in WAR_ROOM
   const task = await prisma.task.findFirst({
     where: { status: "WAR_ROOM" },
-    include: { assignedToAgent: true, module: { include: { project: true } } } // <--- Need Project ID via Module
+    include: { assignedToAgent: true, module: { include: { project: true } } }, // <--- Need Project ID via Module
   });
 
   if (!task) return;
@@ -17,8 +18,8 @@ export async function runWarRoomAgentOnce() {
   console.log(`[WarRoom] ⚔️  Entering War Room for Task ${task.id}`);
 
   try {
-    const context = task.contextPacket as any ?? {};
-    const feedback = task.reviewFeedback as any ?? {};
+    const context = (task.contextPacket as any) ?? {};
+    const feedback = (task.reviewFeedback as any) ?? {};
     const traceId = randomUUID();
 
     // 2. Construct the "Mediator" Prompt
@@ -49,51 +50,67 @@ Output JSON ONLY:
 `;
 
     // 3. Fetch Agent Config and Call Bedrock
-    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Architect' } }); // War Room uses Architect-level reasoning
+    const agentRecord = await prisma.agent.findFirst({
+      where: { role: "Architect" },
+    }); // War Room uses Architect-level reasoning
     if (!agentRecord || !agentRecord.modelConfig) {
       console.error("[WarRoom] Agent config not found. Aborting.");
       return;
     }
     const config = (agentRecord.modelConfig as any).primary as ModelConfig;
 
-    const result = await invokeModel(config, "You are the WAR ROOM MEDIATOR.", prompt);
+    const result = await invokeModel(
+      config,
+      "You are the WAR ROOM MEDIATOR.",
+      prompt
+    );
     let text = result.text.trim();
-    
+
     // Extract JSON from response
-    const jsonStart = text.indexOf('{');
-    const jsonEnd = text.lastIndexOf('}');
+    const jsonStart = text.indexOf("{");
+    const jsonEnd = text.lastIndexOf("}");
     if (jsonStart !== -1 && jsonEnd !== -1) {
       text = text.substring(jsonStart, jsonEnd + 1);
     }
-    
+
     let resolution;
     try {
-        resolution = JSON.parse(text);
+      resolution = JSON.parse(text);
     } catch (e) {
-        console.error("[WarRoom] Failed to parse JSON:", text);
-        return;
+      console.error("[WarRoom] Failed to parse JSON:", text);
+      return;
     }
 
     console.log(`[WarRoom] ⚖️  Verdict: ${resolution.analysis}`);
 
     // --- CRITICAL FIX START ---
     // 4. SANDBOXED VERIFICATION (Claim 1 Upgrade)
-    if (resolution.targetFile && resolution.finalCode && task.module?.project?.id) {
-        console.log(`[WarRoom] 🧪 Initiating Sandbox Verification for ${resolution.targetFile}...`);
-        
-        // Simulate running `npm test` in a sandbox
-        // In a real implementation, this would spawn a Docker container or isolated process
-        const isSafe = await runSandboxTest(resolution.finalCode);
+    if (
+      resolution.targetFile &&
+      resolution.finalCode &&
+      task.module?.project?.id
+    ) {
+      console.log(
+        `[WarRoom] 🧪 Initiating Sandbox Verification for ${resolution.targetFile}...`
+      );
 
-        if (isSafe) {
-            console.log(`[WarRoom] ✅ Sandbox Tests PASSED. Applying patch...`);
-            await workspaceManager.writeFile(task.module.project.id, resolution.targetFile, resolution.finalCode);
-        } else {
-            console.error(`[WarRoom] ❌ Sandbox Tests FAILED. Patch rejected.`);
-            // In a real system, we would feed this back to the LLM for a retry
-            // For now, we abort to prevent breaking the build
-            return;
-        }
+      // Simulate running `npm test` in a sandbox
+      // In a real implementation, this would spawn a Docker container or isolated process
+      const isSafe = await runSandboxTest(resolution.finalCode);
+
+      if (isSafe) {
+        console.log(`[WarRoom] ✅ Sandbox Tests PASSED. Applying patch...`);
+        await workspaceManager.writeFile(
+          task.module.project.id,
+          resolution.targetFile,
+          resolution.finalCode
+        );
+      } else {
+        console.error(`[WarRoom] ❌ Sandbox Tests FAILED. Patch rejected.`);
+        // In a real system, we would feed this back to the LLM for a retry
+        // For now, we abort to prevent breaking the build
+        return;
+      }
     }
     // --- CRITICAL FIX END ---
 
@@ -101,7 +118,7 @@ Output JSON ONLY:
     const updatedContext = {
       ...context,
       warRoomResolution: resolution,
-      lastModifiedBy: "WAR_ROOM_MEDIATOR"
+      lastModifiedBy: "WAR_ROOM_MEDIATOR",
     };
 
     await prisma.task.update({
@@ -114,10 +131,16 @@ Output JSON ONLY:
         blockedReason: null,
         result: {
           output: resolution.finalCode || resolution.resolution,
-          note: "Resolved by War Room"
-        }
-      }
+          note: "Resolved by War Room",
+        },
+      },
     });
+
+    // Emit WebSocket update for real-time UI
+    const resolvedTask = await prisma.task.findUnique({
+      where: { id: task.id },
+    });
+    if (resolvedTask) emitTaskUpdate(resolvedTask);
 
     // 6. Log the Event
     await prisma.trace.create({
@@ -126,12 +149,13 @@ Output JSON ONLY:
         taskId: task.id,
         agentId: "WAR_ROOM_MEDIATOR",
         event: "DEADLOCK_RESOLVED",
-        metadata: resolution
-      }
+        metadata: resolution,
+      },
     });
 
-    console.log(`[WarRoom] ✅ Deadlock resolved. Task ${task.id} patched and sent to QA.`);
-
+    console.log(
+      `[WarRoom] ✅ Deadlock resolved. Task ${task.id} patched and sent to QA.`
+    );
   } catch (error) {
     console.error(`[WarRoom] ❌ Failed to resolve deadlock:`, error);
   }
@@ -147,7 +171,7 @@ const execAsync = promisify(exec);
 /**
  * Simulates a sandboxed test runner.
  * Returns true if the code is "safe" (passes tests).
- * 
+ *
  * Phase 3 Upgrade: Uses Docker for true isolation.
  */
 async function runSandboxTest(code: string): Promise<boolean> {
@@ -167,16 +191,15 @@ async function runSandboxTest(code: string): Promise<boolean> {
     // Limits memory to 128MB (-m 128m)
     // Timeouts after 5 seconds
     console.log(`[WarRoom] 🐳 Spawning Docker Sandbox...`);
-    
+
     // NOTE: This requires the 'sandbox-runner' image to be built:
     // docker build -t sandbox-runner ./backend/sandbox
     const command = `docker run --rm -m 128m -v "${sandboxDir}:/usr/src/app" sandbox-runner ts-node test.ts`;
-    
+
     await execAsync(command, { timeout: 5000 });
-    
+
     console.log(`[WarRoom] ✅ Docker Sandbox Passed.`);
     return true;
-
   } catch (error: any) {
     console.error(`[WarRoom] ❌ Docker Sandbox Failed:`, error.message);
     return false;
@@ -184,6 +207,8 @@ async function runSandboxTest(code: string): Promise<boolean> {
     // Cleanup
     try {
       await fs.rm(sandboxDir, { recursive: true, force: true });
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 }
