@@ -145,28 +145,49 @@ import "./agents/runner"; // Start Autonomous Agents Loop
 const httpServer = createServer(app);
 initializeWebSocket(httpServer);
 
-httpServer.listen(Number(PORT), "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 WebSocket ready for real-time updates`);
+import { exec } from "child_process";
+import { promisify } from "util";
+const execAsync = promisify(exec);
 
-  // Start Background Services
-  console.log(`🧠 Starting Governance Loop...`);
-  startGovernanceLoop();
-
-  console.log(`📨 Starting Task Queue Processor...`);
-  // Simple polling for prototype (in production, use a worker process)
-  setInterval(async () => {
-    const taskId = await taskQueue.pop();
-    if (taskId) {
-      // In a real app, we would call the Dispatcher here
-      // For now, we just log it to prove the queue works
-      console.log(`[Worker] Processing Task ${taskId} from Redis`);
+async function runMigrations() {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log("🔄 Running database migrations...");
+      const { stdout, stderr } = await execAsync("npx prisma migrate deploy");
+      console.log("✅ Migrations success:", stdout);
+      if (stderr) console.warn("⚠️ Migration warnings:", stderr);
+    } catch (error) {
+      console.error("❌ Migration failed:", error);
+      // We don't exit here to allow the server to start even if migration fails
+      // This allows debugging via logs
     }
-  }, 1000);
+  }
+}
 
-  // Start Memory Retention Scheduler
-  console.log(`🧹 Starting Memory Retention Scheduler...`);
-  memoryRetention.startPurgeScheduler();
+runMigrations().then(() => {
+  httpServer.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📡 WebSocket ready for real-time updates`);
+
+    // Start Background Services
+    console.log(`🧠 Starting Governance Loop...`);
+    startGovernanceLoop();
+
+    console.log(`📨 Starting Task Queue Processor...`);
+    // Simple polling for prototype (in production, use a worker process)
+    setInterval(async () => {
+      const taskId = await taskQueue.pop();
+      if (taskId) {
+        // In a real app, we would call the Dispatcher here
+        // For now, we just log it to prove the queue works
+        console.log(`[Worker] Processing Task ${taskId} from Redis`);
+      }
+    }, 1000);
+
+    // Start Memory Retention Scheduler
+    console.log(`🧹 Starting Memory Retention Scheduler...`);
+    memoryRetention.startPurgeScheduler();
+  });
 });
 
 export { prisma };
