@@ -161,7 +161,7 @@ export function EvolutionTimeline({
       {/* Main Chart */}
       <div className="h-96 w-full bg-gray-900/80 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} onClick={(e) => {
+          <ComposedChart data={data} onClick={(e: any) => {
             if (e?.activePayload?.[0]) {
               setSelectedGeneration(data.find(d => d.generationNumber === e.activeLabel) || null);
             }
