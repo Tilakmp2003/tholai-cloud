@@ -1,15 +1,13 @@
 /**
  * Socratic Interrogator Agent
- * 
+ *
  * Challenges vague requirements and forces clarity before work begins.
  * Computes an ambiguity score and asks structured questions until requirements are clear.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { invokeModel, ModelConfig } from '../services/llmClient';
-import { emitLog } from '../websocket/socketServer';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
+import { invokeModel, ModelConfig } from "../services/llmClient";
+import { emitLog } from "../websocket/socketServer";
 
 const AMBIGUITY_THRESHOLD = 0.15; // 15% ambiguity is acceptable
 const MAX_INTERROGATION_ROUNDS = 5;
@@ -26,7 +24,11 @@ export interface InterrogationResult {
 export interface AmbiguityAnalysis {
   score: number; // 0-1 (0 = crystal clear, 1 = completely vague)
   issues: Array<{
-    category: 'MISSING_INFO' | 'AMBIGUOUS_TERM' | 'CONFLICTING_REQ' | 'UNDEFINED_SCOPE';
+    category:
+      | "MISSING_INFO"
+      | "AMBIGUOUS_TERM"
+      | "CONFLICTING_REQ"
+      | "UNDEFINED_SCOPE";
     description: string;
     question: string;
   }>;
@@ -44,10 +46,16 @@ async function analyzeAmbiguity(
 REQUIREMENTS:
 ${requirements}
 
-${Object.keys(previousAnswers).length > 0 ? `
+${
+  Object.keys(previousAnswers).length > 0
+    ? `
 PREVIOUS CLARIFICATIONS:
-${Object.entries(previousAnswers).map(([q, a]) => `Q: ${q}\nA: ${a}`).join('\n\n')}
-` : ''}
+${Object.entries(previousAnswers)
+  .map(([q, a]) => `Q: ${q}\nA: ${a}`)
+  .join("\n\n")}
+`
+    : ""
+}
 
 Analyze and return JSON ONLY:
 {
@@ -76,18 +84,24 @@ Rules:
 - Questions should be specific and actionable`;
 
   try {
-    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Socratic' } });
+    const agentRecord = await prisma.agent.findFirst({
+      where: { role: "Socratic" },
+    });
     if (!agentRecord || !agentRecord.modelConfig) {
       return { score: 0.5, issues: [] };
     }
     const modelConfig = (agentRecord.modelConfig as any).primary as ModelConfig;
 
-    const response = await invokeModel(modelConfig, 'You are a requirements analyst. Return only valid JSON.', prompt);
+    const response = await invokeModel(
+      modelConfig,
+      "You are a requirements analyst. Return only valid JSON.",
+      prompt
+    );
 
-    const clean = response.text.replace(/```json|```/g, '').trim();
+    const clean = response.text.replace(/```json|```/g, "").trim();
     return JSON.parse(clean);
   } catch (error) {
-    console.error('[Socratic] Failed to analyze ambiguity:', error);
+    console.error("[Socratic] Failed to analyze ambiguity:", error);
     return { score: 0.5, issues: [] };
   }
 }
@@ -105,22 +119,30 @@ ORIGINAL REQUIREMENTS:
 ${originalRequirements}
 
 CLARIFICATIONS:
-${Object.entries(answers).map(([q, a]) => `Q: ${q}\nA: ${a}`).join('\n\n')}
+${Object.entries(answers)
+  .map(([q, a]) => `Q: ${q}\nA: ${a}`)
+  .join("\n\n")}
 
 Write a clear, structured requirements document that incorporates all clarifications.
 Use bullet points and sections. Be specific and actionable.`;
 
   try {
-    const agentRecord = await prisma.agent.findFirst({ where: { role: 'Socratic' } });
+    const agentRecord = await prisma.agent.findFirst({
+      where: { role: "Socratic" },
+    });
     if (!agentRecord || !agentRecord.modelConfig) {
       return originalRequirements;
     }
     const modelConfig = (agentRecord.modelConfig as any).primary as ModelConfig;
 
-    const response = await invokeModel(modelConfig, 'You are a technical writer creating clear requirements documents.', prompt);
+    const response = await invokeModel(
+      modelConfig,
+      "You are a technical writer creating clear requirements documents.",
+      prompt
+    );
     return response.text;
   } catch (error) {
-    console.error('[Socratic] Failed to synthesize requirements:', error);
+    console.error("[Socratic] Failed to synthesize requirements:", error);
     return originalRequirements;
   }
 }
@@ -135,53 +157,59 @@ export async function interrogateRequirements(
   round: number = 1
 ): Promise<InterrogationResult> {
   emitLog(`[Socratic] 🔍 Analyzing requirements (Round ${round})...`);
-  
+
   // Analyze ambiguity
   const analysis = await analyzeAmbiguity(requirements, previousAnswers);
-  
+
   emitLog(`[Socratic] Ambiguity Score: ${(analysis.score * 100).toFixed(1)}%`);
-  
+
   // Check if we're done
-  if (analysis.score <= AMBIGUITY_THRESHOLD || round >= MAX_INTERROGATION_ROUNDS) {
+  if (
+    analysis.score <= AMBIGUITY_THRESHOLD ||
+    round >= MAX_INTERROGATION_ROUNDS
+  ) {
     // Synthesize final requirements
-    const clarifiedRequirements = Object.keys(previousAnswers).length > 0
-      ? await synthesizeClarifiedRequirements(requirements, previousAnswers)
-      : requirements;
-    
-    emitLog(`[Socratic] ✅ Requirements ready (Score: ${(analysis.score * 100).toFixed(1)}%)`);
-    
+    const clarifiedRequirements =
+      Object.keys(previousAnswers).length > 0
+        ? await synthesizeClarifiedRequirements(requirements, previousAnswers)
+        : requirements;
+
+    emitLog(
+      `[Socratic] ✅ Requirements ready (Score: ${(
+        analysis.score * 100
+      ).toFixed(1)}%)`
+    );
+
     // Store the interrogation result
     await prisma.project.update({
       where: { id: projectId },
       data: {
-        description: clarifiedRequirements
-      }
+        description: clarifiedRequirements,
+      },
     });
-    
+
     return {
       isReady: true,
       ambiguityScore: analysis.score,
       clarifiedRequirements,
       questions: [],
       answers: previousAnswers,
-      round
+      round,
     };
   }
-  
+
   // Extract questions from issues
-  const questions = analysis.issues
-    .slice(0, 5)
-    .map(issue => issue.question);
-  
+  const questions = analysis.issues.slice(0, 5).map((issue) => issue.question);
+
   emitLog(`[Socratic] ❓ ${questions.length} clarification questions needed`);
-  
+
   return {
     isReady: false,
     ambiguityScore: analysis.score,
     clarifiedRequirements: requirements,
     questions,
     answers: previousAnswers,
-    round
+    round,
   };
 }
 
@@ -195,17 +223,25 @@ export async function processAnswers(
   newAnswers: Record<string, string>
 ): Promise<InterrogationResult> {
   const allAnswers = { ...previousAnswers, ...newAnswers };
-  const nextRound = Object.keys(previousAnswers).length > 0 
-    ? Math.ceil(Object.keys(allAnswers).length / 5) + 1 
-    : 2;
-  
-  return interrogateRequirements(projectId, requirements, allAnswers, nextRound);
+  const nextRound =
+    Object.keys(previousAnswers).length > 0
+      ? Math.ceil(Object.keys(allAnswers).length / 5) + 1
+      : 2;
+
+  return interrogateRequirements(
+    projectId,
+    requirements,
+    allAnswers,
+    nextRound
+  );
 }
 
 /**
  * Quick check if requirements need interrogation
  */
-export async function needsInterrogation(requirements: string): Promise<boolean> {
+export async function needsInterrogation(
+  requirements: string
+): Promise<boolean> {
   const analysis = await analyzeAmbiguity(requirements);
   return analysis.score > AMBIGUITY_THRESHOLD;
 }
@@ -214,5 +250,5 @@ export const socraticInterrogator = {
   interrogateRequirements,
   processAnswers,
   needsInterrogation,
-  analyzeAmbiguity
+  analyzeAmbiguity,
 };

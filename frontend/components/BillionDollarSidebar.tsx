@@ -13,7 +13,8 @@ import {
   Search, 
   ChevronLeft, 
   Command,
-  Settings
+  Settings,
+  Sprout
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { name: 'Agents', path: '/agents', icon: Users, shortcut: '⌘3' },
   { name: 'Workspace', path: '/workspace', icon: TerminalSquare, shortcut: '⌘4' },
   { name: 'Preview', path: '/preview', icon: View, shortcut: '⌘5' },
+  { name: 'Evolution', path: '/evolution', icon: Sprout, shortcut: '⌘E' },
   { name: 'Admin', path: '/admin', icon: Settings, shortcut: '⌘6' },
 ];
 

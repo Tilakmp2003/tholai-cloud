@@ -3,14 +3,14 @@
  * Provides access to DeepSeek R1:free and other models via OpenRouter
  */
 
-import { LLMMessage, LLMResponse } from '../types';
+import { LLMMessage, LLMResponse } from "../types";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
-if (!OPENROUTER_API_KEY) {
-  console.warn('[OpenRouter Provider] OPENROUTER_API_KEY not set. OpenRouter will be unavailable.');
+// Lazy initialization to allow dotenv to load first
+function getOpenRouterKey(): string | undefined {
+  return process.env.OPENROUTER_API_KEY;
 }
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 export async function callOpenRouter(
   model: string,
@@ -19,17 +19,22 @@ export async function callOpenRouter(
   temperature: number
 ): Promise<LLMResponse> {
   try {
+    const apiKey = getOpenRouterKey();
+    if (!apiKey) {
+      throw new Error("OpenRouter is not initialized (missing API Key)");
+    }
+
     const res = await fetch(OPENROUTER_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3001', // Optional, for rankings
-        'X-Title': 'AI Company Platform', // Optional, for rankings
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:3001", // Optional, for rankings
+        "X-Title": "AI Company Platform", // Optional, for rankings
       },
       body: JSON.stringify({
         model,
-        messages: messages.map(m => ({
+        messages: messages.map((m) => ({
           role: m.role,
           content: m.content,
         })),
@@ -43,11 +48,11 @@ export async function callOpenRouter(
       throw new Error(`OpenRouter API error ${res.status}: ${text}`);
     }
 
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     const choice = data.choices[0];
-    
+
     if (!choice || !choice.message?.content) {
-      throw new Error('OpenRouter returned empty response');
+      throw new Error("OpenRouter returned empty response");
     }
 
     return {
@@ -61,7 +66,7 @@ export async function callOpenRouter(
         : undefined,
     };
   } catch (error: any) {
-    console.error('[OpenRouter Provider] Error:', error.message);
+    console.error("[OpenRouter Provider] Error:", error.message);
     throw new Error(`OpenRouter API error: ${error.message}`);
   }
 }

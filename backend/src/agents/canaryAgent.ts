@@ -1,11 +1,9 @@
-import { PrismaClient, Task } from '@prisma/client';
-import { callLLM } from '../llm/llmClient';
-import { getAgentConfig } from '../llm/modelRegistry';
-
-const prisma = new PrismaClient();
+import { Task } from "@prisma/client";
+import { callLLM } from "../llm/llmClient";
+import { getAgentConfig } from "../llm/modelRegistry";
+import { prisma } from "../lib/prisma";
 
 export class CanaryAgent {
-
   async probeSystem(task: Task, context: any): Promise<any> {
     const systemPrompt = `
 You are a Canary Agent. You are in PROBING-MODE.
@@ -27,53 +25,68 @@ OUTPUT JSON ONLY:
 }
 `;
 
-    const config = await getAgentConfig('Canary');
+    const config = await getAgentConfig("Canary");
     const response = await callLLM(config, [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: "Probe system." }
+      { role: "system", content: systemPrompt },
+      { role: "user", content: "Probe system." },
     ]);
 
     try {
-        const cleanResponse = response.content.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanResponse);
+      const cleanResponse = response.content
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (e) {
-        return { status: "FAILED", result: "" };
+      return { status: "FAILED", result: "" };
     }
   }
 }
 
 export async function runCanaryAgentOnce() {
-    const tasks = await prisma.task.findMany({
-        where: { status: 'ASSIGNED', requiredRole: 'Canary' },
-        take: 5
+  const tasks = await prisma.task.findMany({
+    where: {
+      status: "ASSIGNED",
+      requiredRole: { in: ["Canary", "CANARY", "canary"] },
+    },
+    take: 5,
+  });
+
+  if (tasks.length === 0) return;
+
+  const agent = new CanaryAgent();
+
+  for (const task of tasks) {
+    console.log(`[Canary] Processing Task ${task.id}`);
+    await prisma.task.update({
+      where: { id: task.id },
+      data: { status: "IN_PROGRESS" },
     });
 
-    if (tasks.length === 0) return;
+    try {
+      const result = await agent.probeSystem(task, task.contextPacket);
 
-    const agent = new CanaryAgent();
-
-    for (const task of tasks) {
-        console.log(`[Canary] Processing Task ${task.id}`);
-        await prisma.task.update({ where: { id: task.id }, data: { status: 'IN_PROGRESS' } });
-
-        try {
-            const result = await agent.probeSystem(task, task.contextPacket);
-
-            if (result.status === 'COMPLETED') {
-                await prisma.task.update({
-                    where: { id: task.id },
-                    data: {
-                        status: 'COMPLETED',
-                        outputArtifact: result.result,
-                        lastAgentMessage: "Validation complete."
-                    }
-                });
-            } else {
-                await prisma.task.update({ where: { id: task.id }, data: { status: 'FAILED', errorMessage: "Validation failed" } });
-            }
-        } catch (error) {
-            console.error(`[Canary] Error:`, error);
-            await prisma.task.update({ where: { id: task.id }, data: { status: 'FAILED', errorMessage: String(error) } });
-        }
+      if (result.status === "COMPLETED") {
+        await prisma.task.update({
+          where: { id: task.id },
+          data: {
+            status: "COMPLETED",
+            outputArtifact: result.result,
+            lastAgentMessage: "Validation complete.",
+          },
+        });
+      } else {
+        await prisma.task.update({
+          where: { id: task.id },
+          data: { status: "FAILED", errorMessage: "Validation failed" },
+        });
+      }
+    } catch (error) {
+      console.error(`[Canary] Error:`, error);
+      await prisma.task.update({
+        where: { id: task.id },
+        data: { status: "FAILED", errorMessage: String(error) },
+      });
     }
+  }
 }

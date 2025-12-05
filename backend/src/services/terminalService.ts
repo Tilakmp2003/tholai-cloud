@@ -1,10 +1,8 @@
-import * as pty from 'node-pty';
-import * as os from 'os';
-import * as path from 'path';
-import * as fs from 'fs';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import * as pty from "node-pty";
+import * as os from "os";
+import * as path from "path";
+import * as fs from "fs";
+import { prisma } from "../lib/prisma";
 
 interface TerminalSession {
   pty: pty.IPty;
@@ -18,21 +16,27 @@ export class TerminalService {
   /**
    * Create a new terminal session
    */
-  async createSession(sessionId: string, projectId: string, onData: (data: string) => void): Promise<void> {
+  async createSession(
+    sessionId: string,
+    projectId: string,
+    onData: (data: string) => void
+  ): Promise<void> {
     try {
       // Poll for workspace path (up to 30 seconds)
       let project = await prisma.project.findUnique({
         where: { id: projectId },
-        select: { workspacePath: true }
+        select: { workspacePath: true },
       });
 
       let attempts = 0;
       while (!project?.workspacePath && attempts < 30) {
-        console.log(`[Terminal] Waiting for workspace path... (${attempts + 1}/30)`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log(
+          `[Terminal] Waiting for workspace path... (${attempts + 1}/30)`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         project = await prisma.project.findUnique({
           where: { id: projectId },
-          select: { workspacePath: true }
+          select: { workspacePath: true },
         });
         attempts++;
       }
@@ -42,37 +46,42 @@ export class TerminalService {
       }
 
       const workspacePath = project.workspacePath;
-      
+
       // Create workspace directory if it doesn't exist
       if (!fs.existsSync(workspacePath)) {
-        console.log(`[Terminal] Creating workspace directory: ${workspacePath}`);
+        console.log(
+          `[Terminal] Creating workspace directory: ${workspacePath}`
+        );
         fs.mkdirSync(workspacePath, { recursive: true });
       }
-      
+
       // Determine shell based on platform
-      const shell = os.platform() === 'win32' ? 'powershell.exe' : process.env.SHELL || '/bin/bash';
-      
+      const shell =
+        os.platform() === "win32"
+          ? "powershell.exe"
+          : process.env.SHELL || "/bin/bash";
+
       console.log(`[Terminal] Spawning shell: ${shell} in ${workspacePath}`);
-      
+
       // Buffer to capture early output
       let outputBuffer: string[] = [];
       let isReady = false;
-      
+
       // Create PTY
       const terminal = pty.spawn(shell, [], {
-        name: 'xterm-color',
+        name: "xterm-color",
         cols: 80,
         rows: 30,
         cwd: workspacePath,
         env: {
           ...process.env,
-          TERM: 'xterm-256color',
-          COLORTERM: 'truecolor',
-        }
+          TERM: "xterm-256color",
+          COLORTERM: "truecolor",
+        },
       });
 
       // Listen for data
-      terminal.onData(data => {
+      terminal.onData((data) => {
         if (isReady) {
           // If ready, send immediately
           onData(data);
@@ -84,7 +93,9 @@ export class TerminalService {
 
       // Handle exit
       terminal.onExit(({ exitCode, signal }) => {
-        console.log(`[Terminal] Session ${sessionId} exited with code ${exitCode}`);
+        console.log(
+          `[Terminal] Session ${sessionId} exited with code ${exitCode}`
+        );
         this.destroySession(sessionId);
       });
 
@@ -92,29 +103,33 @@ export class TerminalService {
       this.sessions.set(sessionId, {
         pty: terminal,
         projectId,
-        cwd: workspacePath
+        cwd: workspacePath,
       });
 
-      console.log(`[Terminal] Created session ${sessionId} for project ${projectId}`);
-      
+      console.log(
+        `[Terminal] Created session ${sessionId} for project ${projectId}`
+      );
+
       // Wait for shell to initialize
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       // Mark as ready and flush any buffered output
       isReady = true;
       if (outputBuffer.length > 0) {
-        const bufferedData = outputBuffer.join('');
-        console.log(`[Terminal] Flushing ${outputBuffer.length} buffered chunks (${bufferedData.length} chars)`);
+        const bufferedData = outputBuffer.join("");
+        console.log(
+          `[Terminal] Flushing ${outputBuffer.length} buffered chunks (${bufferedData.length} chars)`
+        );
         onData(bufferedData);
         outputBuffer = [];
       }
-      
+
       // Send pwd command to force output and prompt
       console.log(`[Terminal] Sending pwd command to force prompt`);
-      terminal.write('pwd\r');
-      
+      terminal.write("pwd\r");
+
       // Wait for the command output and prompt
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     } catch (error) {
       console.error(`[Terminal] Failed to create session ${sessionId}:`, error);
       throw error;

@@ -1,14 +1,12 @@
 import { randomUUID, createHash } from "crypto";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 /**
  * Claim 3: Immutable Context Reference Architecture
- * 
+ *
  * Simulates a Vector Database that stores "Immutable Artifacts".
  * In a real system, this would connect to Pinecone/Weaviate.
- * 
+ *
  * Phase 3 Upgrade: Persistence via Postgres (Prisma)
  */
 class VectorDbService {
@@ -20,22 +18,24 @@ class VectorDbService {
    */
   async store(content: string): Promise<string> {
     const id = randomUUID();
-    
+
     // Claim 3 Upgrade: Cryptographic Seal
-    const hash = createHash('sha256').update(content).digest('hex');
+    const hash = createHash("sha256").update(content).digest("hex");
     const vectorPointer = `vector://${id}?sig=${hash}`;
-    
+
     // Phase 3: Persist to Postgres
     await prisma.artifact.create({
       data: {
         id,
         content,
-        hash
-      }
+        hash,
+      },
     });
 
-    console.log(`[VectorDb] 🧊 Stored Immutable Artifact (Persisted): ${vectorPointer}`);
-    
+    console.log(
+      `[VectorDb] 🧊 Stored Immutable Artifact (Persisted): ${vectorPointer}`
+    );
+
     return vectorPointer;
   }
 
@@ -51,26 +51,28 @@ class VectorDbService {
     // Parse ID and Signature
     const url = new URL(vectorPointer);
     const id = url.hostname; // 'vector://uuid' -> hostname is uuid in some parsers, but let's parse manually for safety
-    
+
     // Manual parsing to be safe with custom protocol
-    const parts = vectorPointer.split('?sig=');
+    const parts = vectorPointer.split("?sig=");
     const base = parts[0];
     const signature = parts[1];
-    const uuid = base.replace('vector://', '');
+    const uuid = base.replace("vector://", "");
 
     // Phase 3: Retrieve from Postgres
     const artifact = await prisma.artifact.findUnique({
-      where: { id: uuid }
+      where: { id: uuid },
     });
-    
+
     if (artifact) {
       const content = artifact.content;
 
       // Verify Integrity
       if (signature) {
-        const currentHash = createHash('sha256').update(content).digest('hex');
+        const currentHash = createHash("sha256").update(content).digest("hex");
         if (currentHash !== signature) {
-          console.error(`[VectorDb] 🚨 INTEGRITY BREACH! Hash mismatch for ${uuid}`);
+          console.error(
+            `[VectorDb] 🚨 INTEGRITY BREACH! Hash mismatch for ${uuid}`
+          );
           throw new Error("Immutable Context Corrupted: Hash mismatch");
         }
         console.log(`[VectorDb] ✅ Verified Merkle Seal for ${uuid}`);

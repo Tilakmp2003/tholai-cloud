@@ -31,6 +31,7 @@ model Project {
   updatedAt   DateTime @updatedAt
   modules     Module[]
   repo        Repo?
+  generations Generation[]
 }
 
 // Claim 3: Immutable Context Artifacts (Vector DB Persistence)
@@ -81,6 +82,12 @@ model Agent {
   
   // Multi-Provider LLM: Model configuration
   modelConfig    Json?    // { provider, model, maxTokens, temperature }
+
+  // Evolutionary AI Fields
+  genome              Json?    // Stores system_prompt, temperature, etc.
+  generation          Int      @default(0)
+  existencePotential  Float    @default(100.0) // E value
+  parentId            String?  // ID of primary parent
   
   modules        Module[]
   tasks          Task[]
@@ -94,8 +101,111 @@ model Agent {
   performanceLogs  AgentPerformanceLog[]
   governanceEvents GovernanceEvent[]
   
+  // Knowledge Harvesting
+  knowledgeNuggets KnowledgeNugget[]
+
+  // Generational Lifecycle
+  topAgentForGenerations Generation[] @relation("TopAgent")
+  agentGenerations       AgentGeneration[]
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model KnowledgeNugget {
+  id            String   @id @default(uuid())
+  category      String   // "Frontend", "Optimization", "Security", "General"
+  content       String   @db.Text // The extracted wisdom/pattern
+  sourceAgentId String
+  sourceAgent   Agent    @relation(fields: [sourceAgentId], references: [id])
+  qualityScore  Float    @default(0.5) // 0.0 to 1.0
+  usageCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+}
+
+
+
+model Generation {
+  id                  String   @id @default(uuid())
+  generationNumber    Int
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id])
+  
+  // Fitness Metrics
+  avgFitness          Float
+  maxFitness          Float
+  minFitness          Float
+  fitnessStdDev       Float
+  
+  // Population Metrics
+  populationSize      Int
+  birthCount          Int      // New agents this generation
+  deathCount          Int      // Terminated agents
+  survivalRate        Float
+  
+  // Evolution Metrics
+  mutationRate        Float
+  crossoverRate       Float
+  elitePreserved      Int      // Top performers kept unchanged
+  
+  // Specialization Distribution (JSON)
+  specializationDistribution Json  // { "frontend": 0.3, "backend": 0.4, ... }
+  
+  // Innovation Tracking
+  keyInnovations      String[] // Notable improvements discovered
+  
+  // Timestamps
+  startedAt           DateTime
+  completedAt         DateTime?
+  
+  // Relations
+  agents              AgentGeneration[]
+  topAgent            Agent?   @relation("TopAgent", fields: [topAgentId], references: [id])
+  topAgentId          String?
+  
+  createdAt           DateTime @default(now())
+  
+  @@unique([projectId, generationNumber])
+  @@index([projectId])
+}
+
+model AgentGeneration {
+  id              String     @id @default(uuid())
+  agentId         String
+  agent           Agent      @relation(fields: [agentId], references: [id])
+  generationId    String
+  generation      Generation @relation(fields: [generationId], references: [id])
+  
+  // Agent's state in this generation
+  fitnessScore    Float
+  tasksCompleted  Int
+  tasksSucceeded  Int
+  tokensUsed      Int
+  existencePotential Float   // E value at end of generation
+  
+  // Genome snapshot (JSON)
+  genomeSnapshot  Json
+  
+  // Lineage
+  parentId        String?    // Parent agent (null if Gen 0)
+  parent          AgentGeneration? @relation("Lineage", fields: [parentId], references: [id])
+  children        AgentGeneration[] @relation("Lineage")
+  
+  // Status
+  status          AgentGenerationStatus @default(ALIVE)
+  causeOfDeath    String?    // If terminated
+  
+  createdAt       DateTime   @default(now())
+  
+  @@unique([agentId, generationId])
+  @@index([generationId])
+}
+
+enum AgentGenerationStatus {
+  ALIVE
+  TERMINATED_LOW_E
+  TERMINATED_RETIREMENT
+  TERMINATED_REPLACED
 }
 
 // ... (existing models)
@@ -420,4 +530,82 @@ model FileChunk {
 }
 
 // Agent Allocation Hardening
+
+// --- ZERO-HALLUCINATION SYSTEM ---
+
+// Blockchain-like Truth Chain for immutable verification records
+model TruthBlock {
+  id              String   @id @default(uuid())
+  index           Int      @unique // Block height in the chain
+  previousHash    String   // Hash of the previous block
+  hash            String   @unique // SHA-256 hash of this block
+  nonce           Int      @default(0) // For proof-of-work (optional)
+  timestamp       DateTime @default(now())
+  
+  // Block contents
+  statements      VerifiedStatement[]
+  
+  @@index([hash])
+  @@index([index])
+}
+
+// Individual verified statements stored in the Truth Chain
+model VerifiedStatement {
+  id              String     @id @default(uuid())
+  blockId         String
+  block           TruthBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  
+  // Verification metadata
+  agentId         String     // Agent who produced the output
+  taskId          String?    // Related task (optional)
+  
+  // Content
+  contentType     String     // "CODE" | "TEXT" | "JSON"
+  content         String     @db.Text // The verified output
+  contentHash     String     // SHA-256 of the content
+  
+  // Proof certificate
+  proofHash       String     // Hash linking to proof details
+  syntaxValid     Boolean    @default(false)
+  sandboxValid    Boolean    @default(false)
+  entropyValid    Boolean    @default(false)
+  
+  // Metrics
+  entropyScore    Float?     // Information entropy of output
+  complexityRatio Float?     // Output complexity / input complexity
+  
+  createdAt       DateTime   @default(now())
+  
+  @@index([agentId])
+  @@index([taskId])
+  @@index([contentHash])
+}
+
+// Log of hallucination detection attempts
+model HallucinationCheck {
+  id              String   @id @default(uuid())
+  agentId         String
+  taskId          String?
+  
+  // Input/Output
+  inputHash       String   // Hash of the input context
+  outputHash      String   // Hash of the agent output
+  
+  // Verification results
+  passed          Boolean
+  failureReason   String?  // "SYNTAX_ERROR" | "SANDBOX_FAIL" | "ENTROPY_VIOLATION"
+  
+  // Metrics
+  syntaxCheckMs   Int?     // Time for syntax check
+  sandboxCheckMs  Int?     // Time for sandbox execution
+  entropyScore    Float?
+  
+  // If failed, the flagged output is stored for review
+  flaggedOutput   String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([agentId, passed])
+  @@index([taskId])
+}
 

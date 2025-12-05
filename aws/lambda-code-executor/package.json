@@ -1,0 +1,17 @@
+{
+  "name": "tholai-code-executor",
+  "version": "1.0.0",
+  "description": "Lambda sandbox for executing code securely",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild index.ts --bundle --platform=node --target=node18 --outfile=dist/index.js --external:aws-sdk",
+    "package": "npm run build && cd dist && zip -r ../function.zip index.js && cd ..",
+    "deploy": "./deploy.sh"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "@types/node": "^20.5.0",
+    "esbuild": "^0.19.2",
+    "typescript": "^5.1.6"
+  }
+}

@@ -1,28 +1,53 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import Editor from '@monaco-editor/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Folder, FolderOpen, FileCode, FileJson, File, 
-  ChevronRight, ChevronDown, Play, Save, ExternalLink, 
-  Terminal, Loader2, X, Search, Command, Cpu, Layout, Activity, ChevronLeft
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
-import { LiveTerminal } from '@/components/LiveTerminal';
-import dynamic from 'next/dynamic';
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import Editor from "@monaco-editor/react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Folder,
+  FolderOpen,
+  FileCode,
+  FileJson,
+  File,
+  ChevronRight,
+  ChevronDown,
+  Play,
+  Save,
+  ExternalLink,
+  Terminal,
+  Loader2,
+  X,
+  Search,
+  Command,
+  Cpu,
+  Layout,
+  Activity,
+  ChevronLeft,
+  Trash2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { LiveTerminal } from "@/components/LiveTerminal";
+import dynamic from "next/dynamic";
 
 // Dynamic import to avoid SSR issues with xterm
 const InteractiveTerminal = dynamic(
-  () => import('@/components/InteractiveTerminal').then(mod => ({ default: mod.InteractiveTerminal })),
+  () =>
+    import("@/components/InteractiveTerminal").then((mod) => ({
+      default: mod.InteractiveTerminal,
+    })),
   { ssr: false }
 );
 
@@ -31,7 +56,7 @@ const InteractiveTerminal = dynamic(
 interface FileNode {
   name: string;
   path: string;
-  type: 'file' | 'dir';
+  type: "file" | "dir";
   children?: FileNode[];
 }
 
@@ -45,25 +70,46 @@ interface Project {
 
 // --- Icons Map ---
 
-const FileIcon = ({ name, className }: { name: string, className?: string }) => {
-  if (name.endsWith('.tsx') || name.endsWith('.ts')) return <FileCode className={cn("text-blue-400", className)} />;
-  if (name.endsWith('.css')) return <FileCode className={cn("text-sky-300", className)} />;
-  if (name.endsWith('.json')) return <FileJson className={cn("text-yellow-400", className)} />;
-  if (name.endsWith('.md')) return <FileCode className={cn("text-purple-400", className)} />;
+const FileIcon = ({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) => {
+  if (name.endsWith(".tsx") || name.endsWith(".ts"))
+    return <FileCode className={cn("text-blue-400", className)} />;
+  if (name.endsWith(".css"))
+    return <FileCode className={cn("text-sky-300", className)} />;
+  if (name.endsWith(".json"))
+    return <FileJson className={cn("text-yellow-400", className)} />;
+  if (name.endsWith(".md"))
+    return <FileCode className={cn("text-purple-400", className)} />;
   return <File className={cn("text-zinc-500", className)} />;
 };
 
 // --- Components ---
 
 // 1. Recursive File Tree
-const FileTreeItem = ({ node, level, onSelect, selectedPath }: { node: FileNode, level: number, onSelect: (path: string) => void, selectedPath: string | null }) => {
+const FileTreeItem = ({
+  node,
+  level,
+  onSelect,
+  selectedPath,
+}: {
+  node: FileNode;
+  level: number;
+  onSelect: (path: string) => void;
+  selectedPath: string | null;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const isSelected = selectedPath === node.path;
-  const hasChildren = node.type === 'dir' && node.children && node.children.length > 0;
+  const hasChildren =
+    node.type === "dir" && node.children && node.children.length > 0;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (node.type === 'dir') {
+    if (node.type === "dir") {
       setIsOpen(!isOpen);
     } else {
       onSelect(node.path);
@@ -72,30 +118,40 @@ const FileTreeItem = ({ node, level, onSelect, selectedPath }: { node: FileNode,
 
   return (
     <div>
-      <div 
+      <div
         className={cn(
           "flex items-center py-1 px-2 cursor-pointer select-none transition-colors text-[13px] font-mono border-l border-transparent hover:bg-white/[0.05]",
-          isSelected ? "bg-white/[0.08] text-emerald-400 border-l-emerald-500" : "text-zinc-400"
+          isSelected
+            ? "bg-white/[0.08] text-emerald-400 border-l-emerald-500"
+            : "text-zinc-400"
         )}
         style={{ paddingLeft: `${level * 12 + 12}px` }}
         onClick={handleClick}
       >
         <span className="mr-1.5 opacity-70">
-          {node.type === 'dir' ? (
-            isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+          {node.type === "dir" ? (
+            isOpen ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )
           ) : (
             <div className="w-3" />
           )}
         </span>
-        
+
         <span className="mr-2">
-          {node.type === 'dir' ? (
-            isOpen ? <FolderOpen className="h-3.5 w-3.5 text-indigo-400" /> : <Folder className="h-3.5 w-3.5 text-indigo-400" />
+          {node.type === "dir" ? (
+            isOpen ? (
+              <FolderOpen className="h-3.5 w-3.5 text-indigo-400" />
+            ) : (
+              <Folder className="h-3.5 w-3.5 text-indigo-400" />
+            )
           ) : (
             <FileIcon name={node.name} className="h-3.5 w-3.5" />
           )}
         </span>
-        
+
         <span className="truncate">{node.name}</span>
       </div>
 
@@ -103,17 +159,17 @@ const FileTreeItem = ({ node, level, onSelect, selectedPath }: { node: FileNode,
         {isOpen && hasChildren && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
             {node.children!.map((child) => (
-              <FileTreeItem 
-                key={child.path} 
-                node={child} 
-                level={level + 1} 
-                onSelect={onSelect} 
-                selectedPath={selectedPath} 
+              <FileTreeItem
+                key={child.path}
+                node={child}
+                level={level + 1}
+                onSelect={onSelect}
+                selectedPath={selectedPath}
               />
             ))}
           </motion.div>
@@ -126,48 +182,52 @@ const FileTreeItem = ({ node, level, onSelect, selectedPath }: { node: FileNode,
 // --- Main Page Component ---
 
 function WorkspaceContent() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   const searchParams = useSearchParams();
-  const projectId = searchParams.get('project');
+  const projectId = searchParams.get("project");
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [unsavedContent, setUnsavedContent] = useState<string | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
-  const [terminalTab, setTerminalTab] = useState<'logs' | 'interactive' | 'chat'>('interactive');
+  const [terminalTab, setTerminalTab] = useState<
+    "logs" | "interactive" | "chat"
+  >("interactive");
 
   // 1. Fetch Project Details
   const { data: project } = useQuery<Project>({
-    queryKey: ['project', projectId],
+    queryKey: ["project", projectId],
     queryFn: async () => {
       if (!projectId) return null;
       const res = await axios.get(`${API_URL}/api/projects`);
-      return res.data.find((p: Project) => p.id === projectId);
+      return res.data.find((p: Project) => p.id === projectId) || null;
     },
-    enabled: !!projectId
+    enabled: !!projectId,
   });
 
   // 2. Fetch File Tree
   const { data: fileTree, isLoading: isLoadingTree } = useQuery<FileNode[]>({
-    queryKey: ['files', projectId],
+    queryKey: ["files", projectId],
     queryFn: async () => {
       if (!projectId) return [];
       const res = await axios.get(`${API_URL}/api/workspace/${projectId}/tree`);
       return res.data;
     },
-    enabled: !!projectId
+    enabled: !!projectId,
   });
 
   // 3. Fetch File Content
   const { data: fileContent, isLoading: isLoadingContent } = useQuery({
-    queryKey: ['content', projectId, selectedFile],
+    queryKey: ["content", projectId, selectedFile],
     queryFn: async () => {
-      if (!projectId || !selectedFile) return '';
-      const res = await axios.get(`${API_URL}/api/workspace/${projectId}/file?path=${selectedFile}`);
+      if (!projectId || !selectedFile) return "";
+      const res = await axios.get(
+        `${API_URL}/api/workspace/${projectId}/file?path=${selectedFile}`
+      );
       return res.data.content;
     },
-    enabled: !!projectId && !!selectedFile
+    enabled: !!projectId && !!selectedFile,
   });
 
   // 4. Save Mutation
@@ -176,26 +236,28 @@ function WorkspaceContent() {
       if (!projectId || !selectedFile || unsavedContent === null) return;
       await axios.post(`${API_URL}/api/workspace/${projectId}/file`, {
         path: selectedFile,
-        content: unsavedContent
+        content: unsavedContent,
       });
     },
     onSuccess: () => {
       toast.success("File saved successfully");
-      queryClient.invalidateQueries({ queryKey: ['content', projectId, selectedFile] });
+      queryClient.invalidateQueries({
+        queryKey: ["content", projectId, selectedFile],
+      });
       setUnsavedContent(null);
-    }
+    },
   });
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         saveMutation.mutate();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [saveMutation]);
 
   // Sync unsaved content when file changes
@@ -205,86 +267,146 @@ function WorkspaceContent() {
 
   // 0. Fetch Projects List for Empty State
   const { data: projects, isLoading: isLoadingProjects } = useQuery<Project[]>({
-    queryKey: ['projects'],
+    queryKey: ["projects"],
     queryFn: async () => {
       const res = await axios.get(`${API_URL}/api/projects`);
       return res.data;
     },
-    enabled: !projectId
+    enabled: !projectId,
   });
+
+  // Delete project mutation
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectIdToDelete: string) => {
+      await axios.delete(`${API_URL}/api/projects/${projectIdToDelete}`);
+    },
+    onSuccess: () => {
+      toast.success("Project deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || "Failed to delete project");
+    },
+  });
+
+  const handleDeleteProject = (
+    e: React.MouseEvent,
+    projectIdToDelete: string,
+    projectName: string
+  ) => {
+    e.stopPropagation();
+    if (
+      confirm(
+        `Are you sure you want to delete "${projectName}"? This will delete all tasks, modules, and agents associated with this project.`
+      )
+    ) {
+      deleteProjectMutation.mutate(projectIdToDelete);
+    }
+  };
 
   if (!projectId) {
     return (
-      <div className="h-screen bg-background flex flex-col items-center justify-center text-zinc-500 font-mono gap-8 p-8">
-        <div className="flex flex-col items-center gap-4">
+      <div className="h-screen bg-background flex flex-col text-zinc-500 font-mono overflow-hidden">
+        {/* Fixed Header */}
+        <div className="shrink-0 pt-8 pb-4 px-8 flex flex-col items-center gap-4">
           <div className="w-20 h-20 rounded-3xl bg-white/[0.03] border border-dashed border-white/10 flex items-center justify-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <Layout className="h-10 w-10 text-zinc-700 group-hover:text-indigo-400 transition-colors" />
           </div>
           <div className="text-center">
-            <h2 className="text-xl font-bold text-zinc-200 tracking-tight">Select Workspace</h2>
-            <p className="text-sm text-zinc-600 mt-1">Choose a project to mount the file system.</p>
+            <h2 className="text-xl font-bold text-zinc-200 tracking-tight">
+              Select Workspace
+            </h2>
+            <p className="text-sm text-zinc-600 mt-1">
+              Choose a project to mount the file system. (
+              {projects?.length || 0} projects)
+            </p>
           </div>
         </div>
 
-        {isLoadingProjects ? (
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-4xl">
-            {projects?.map((p) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02, y: -2 }}
-                onClick={() => router.push(`/workspace?project=${p.id}`)}
-                className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-6 cursor-pointer hover:bg-white/[0.05] hover:border-indigo-500/30 transition-all group relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ExternalLink className="h-4 w-4 text-indigo-400" />
-                </div>
-                <h3 className="text-lg font-bold text-zinc-200 mb-2 group-hover:text-indigo-300 transition-colors">{p.name}</h3>
-                <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
-                  <Folder className="h-3 w-3" />
-                  <span className="truncate">{p.workspacePath || 'No path set'}</span>
-                </div>
-                {p.previewStatus === 'RUNNING' && (
-                  <div className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-bold text-emerald-500">LIVE</span>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-            
-            {/* Create New Project Card */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -2 }}
-              onClick={() => router.push('/')} // Redirect to main Command Center
-              className="bg-transparent border border-dashed border-white/10 rounded-xl p-6 cursor-pointer hover:bg-white/[0.02] hover:border-white/20 transition-all flex flex-col items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400"
-            >
-              <div className="w-10 h-10 rounded-full bg-white/[0.03] flex items-center justify-center">
-                <span className="text-2xl font-light">+</span>
-              </div>
-              <span className="text-sm font-medium">Create New Project</span>
-            </motion.div>
-          </div>
-        )}
+        {/* Scrollable Project Grid */}
+        <div className="flex-1 overflow-hidden px-8 pb-4">
+          {isLoadingProjects ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+            </div>
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl mx-auto pb-8">
+                {projects?.map((p) => (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    onClick={() => router.push(`/workspace?project=${p.id}`)}
+                    className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-6 cursor-pointer hover:bg-white/[0.05] hover:border-indigo-500/30 transition-all group relative overflow-hidden"
+                  >
+                    {/* Action buttons */}
+                    <div className="absolute top-0 right-0 p-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => handleDeleteProject(e, p.id, p.name)}
+                        className="p-1.5 rounded-md hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors"
+                        title="Delete project"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      <ExternalLink className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-zinc-200 mb-2 group-hover:text-indigo-300 transition-colors pr-16">
+                      {p.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+                      <Folder className="h-3 w-3" />
+                      <span className="truncate">
+                        {p.workspacePath || "No path set"}
+                      </span>
+                    </div>
+                    {p.previewStatus === "RUNNING" && (
+                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10px] font-bold text-emerald-500">
+                          LIVE
+                        </span>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
 
-        <Button 
-          variant="ghost" 
-          className="text-zinc-600 hover:text-zinc-400 text-xs mt-8"
-          onClick={() => router.push('/preview')}
-        >
-          Return to Preview Hub
-        </Button>
+                {/* Create New Project Card */}
+                <motion.div
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  onClick={() => router.push("/")} // Redirect to main Command Center
+                  className="bg-transparent border border-dashed border-white/10 rounded-xl p-6 cursor-pointer hover:bg-white/[0.02] hover:border-white/20 transition-all flex flex-col items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400 min-h-[120px]"
+                >
+                  <div className="w-10 h-10 rounded-full bg-white/[0.03] flex items-center justify-center">
+                    <span className="text-2xl font-light">+</span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    Create New Project
+                  </span>
+                </motion.div>
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="shrink-0 pb-6 flex justify-center">
+          <Button
+            variant="ghost"
+            className="text-zinc-600 hover:text-zinc-400 text-xs"
+            onClick={() => router.push("/preview")}
+          >
+            Return to Preview Hub
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-screen bg-background text-zinc-300 font-sans flex flex-col overflow-hidden selection:bg-indigo-500/30">
-      
       {/* --- Header Bar --- */}
       <header className="h-12 border-b border-white/[0.05] bg-background flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center gap-4">
@@ -292,19 +414,25 @@ function WorkspaceContent() {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-            onClick={() => router.push('/workspace')}
+            onClick={() => router.push("/workspace")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
             <Layout className="h-4 w-4 text-indigo-500" />
-            <span className="text-zinc-300 font-bold tracking-wider">WORKSPACE</span>
+            <span className="text-zinc-300 font-bold tracking-wider">
+              WORKSPACE
+            </span>
             <span>/</span>
-            <span className="text-indigo-400">{project?.name || 'Loading...'}</span>
+            <span className="text-indigo-400">
+              {project?.name || "Loading..."}
+            </span>
             {selectedFile && (
               <>
                 <span>/</span>
-                <span className="text-zinc-300">{selectedFile.split('/').pop()}</span>
+                <span className="text-zinc-300">
+                  {selectedFile.split("/").pop()}
+                </span>
               </>
             )}
             {unsavedContent !== null && (
@@ -317,14 +445,18 @@ function WorkspaceContent() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
                   onClick={() => saveMutation.mutate()}
                   disabled={unsavedContent === null || saveMutation.isPending}
                 >
-                  {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {saveMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Save (Cmd+S)</TooltipContent>
@@ -333,10 +465,10 @@ function WorkspaceContent() {
 
           <div className="h-4 w-[1px] bg-white/10 mx-2" />
 
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             className="h-7 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 gap-2 text-xs font-mono"
-            onClick={() => window.open('/preview', '_blank')}
+            onClick={() => window.open("/preview", "_blank")}
           >
             <Play className="h-3 w-3 fill-current" />
             PREVIEW
@@ -346,13 +478,14 @@ function WorkspaceContent() {
 
       {/* --- Main Layout --- */}
       <div className="flex-1 flex overflow-hidden">
-        
         {/* 1. Sidebar (File Explorer) */}
         <div className="w-64 bg-[#18181b] flex flex-col shrink-0 border-r border-white/[0.05]">
           {/* Explorer Section */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="h-9 flex items-center px-4 shrink-0">
-              <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Explorer</span>
+              <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+                Explorer
+              </span>
             </div>
             <ScrollArea className="flex-1">
               <div className="py-2 px-2">
@@ -362,13 +495,13 @@ function WorkspaceContent() {
                     <span className="text-xs font-mono">SCANNING...</span>
                   </div>
                 ) : (
-                  fileTree?.map(node => (
-                    <FileTreeItem 
-                      key={node.path} 
-                      node={node} 
-                      level={0} 
-                      onSelect={setSelectedFile} 
-                      selectedPath={selectedFile} 
+                  fileTree?.map((node) => (
+                    <FileTreeItem
+                      key={node.path}
+                      node={node}
+                      level={0}
+                      onSelect={setSelectedFile}
+                      selectedPath={selectedFile}
                     />
                   ))
                 )}
@@ -385,10 +518,15 @@ function WorkspaceContent() {
               <div className="h-9 bg-[#18181b] flex items-center px-0 border-b border-black shrink-0">
                 <div className="h-full px-4 flex items-center gap-2 bg-[#1e1e1e] min-w-[150px] border-t-2 border-indigo-500">
                   <FileIcon name={selectedFile} className="h-3.5 w-3.5" />
-                  <span className="text-xs text-zinc-300 font-mono truncate">{selectedFile.split('/').pop()}</span>
-                  <button 
+                  <span className="text-xs text-zinc-300 font-mono truncate">
+                    {selectedFile.split("/").pop()}
+                  </span>
+                  <button
                     className="ml-auto hover:bg-white/10 rounded p-0.5"
-                    onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                    }}
                   >
                     <X className="h-3 w-3 text-zinc-500" />
                   </button>
@@ -408,46 +546,55 @@ function WorkspaceContent() {
                     path={selectedFile}
                     defaultValue={fileContent}
                     value={unsavedContent ?? fileContent}
-                    onChange={(value) => setUnsavedContent(value || '')}
+                    onChange={(value) => setUnsavedContent(value || "")}
                     theme="vs-dark"
                     onMount={(editor, monaco) => {
                       // Configure TypeScript to be less strict and suppress common errors
-                      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-                        noSemanticValidation: false,
-                        noSyntaxValidation: false,
-                        diagnosticCodesToIgnore: [
-                          1005, // Expecting ';'
-                          2307, // Cannot find module
-                          2304, // Cannot find name
-                          2339, // Property does not exist
-                          2345, // Argument of type is not assignable
-                          2741, // Property is missing in type
-                          7016, // Could not find declaration file
-                        ],
-                      });
+                      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions(
+                        {
+                          noSemanticValidation: false,
+                          noSyntaxValidation: false,
+                          diagnosticCodesToIgnore: [
+                            1005, // Expecting ';'
+                            2307, // Cannot find module
+                            2304, // Cannot find name
+                            2339, // Property does not exist
+                            2345, // Argument of type is not assignable
+                            2741, // Property is missing in type
+                            7016, // Could not find declaration file
+                          ],
+                        }
+                      );
 
                       // Set compiler options for more lenient type checking
-                      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-                        target: monaco.languages.typescript.ScriptTarget.Latest,
-                        allowNonTsExtensions: true,
-                        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-                        module: monaco.languages.typescript.ModuleKind.ESNext,
-                        noEmit: true,
-                        esModuleInterop: true,
-                        jsx: monaco.languages.typescript.JsxEmit.React,
-                        reactNamespace: 'React',
-                        allowJs: true,
-                        typeRoots: ['node_modules/@types'],
-                        skipLibCheck: true,
-                        strict: false,
-                        noImplicitAny: false,
-                      });
+                      monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
+                        {
+                          target:
+                            monaco.languages.typescript.ScriptTarget.Latest,
+                          allowNonTsExtensions: true,
+                          moduleResolution:
+                            monaco.languages.typescript.ModuleResolutionKind
+                              .NodeJs,
+                          module: monaco.languages.typescript.ModuleKind.ESNext,
+                          noEmit: true,
+                          esModuleInterop: true,
+                          jsx: monaco.languages.typescript.JsxEmit.React,
+                          reactNamespace: "React",
+                          allowJs: true,
+                          typeRoots: ["node_modules/@types"],
+                          skipLibCheck: true,
+                          strict: false,
+                          noImplicitAny: false,
+                        }
+                      );
 
                       // Disable validation for JavaScript files
-                      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-                        noSemanticValidation: true,
-                        noSyntaxValidation: false,
-                      });
+                      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions(
+                        {
+                          noSemanticValidation: true,
+                          noSyntaxValidation: false,
+                        }
+                      );
                     }}
                     options={{
                       minimap: { enabled: false },
@@ -468,12 +615,14 @@ function WorkspaceContent() {
           ) : (
             /* System Standby (Zero State) */
             <div className="flex-1 flex items-center justify-center bg-[#1e1e1e] relative overflow-hidden">
-               <div className="relative z-10 flex flex-col items-center opacity-30">
-                 <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
-                   <Command className="h-8 w-8 text-zinc-500" />
-                 </div>
-                 <p className="text-zinc-500 font-mono text-xs">Select a file to edit</p>
-               </div>
+              <div className="relative z-10 flex flex-col items-center opacity-30">
+                <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
+                  <Command className="h-8 w-8 text-zinc-500" />
+                </div>
+                <p className="text-zinc-500 font-mono text-xs">
+                  Select a file to edit
+                </p>
+              </div>
             </div>
           )}
 
@@ -482,71 +631,107 @@ function WorkspaceContent() {
             {/* Tabs */}
             <div className="h-9 flex items-center px-4 shrink-0 gap-2 overflow-hidden bg-[#18181b] border-b border-white/[0.05]">
               <div className="flex items-center gap-4 text-[10px] font-bold tracking-widest text-zinc-500 overflow-x-auto [&::-webkit-scrollbar]:hidden whitespace-nowrap mask-linear-fade w-full">
-                <span 
-                  className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'chat' && "text-zinc-200")} 
-                  onClick={() => setTerminalTab('chat' as any)}
+                <span
+                  className={cn(
+                    "cursor-pointer hover:text-zinc-300 transition-colors",
+                    terminalTab === "chat" && "text-zinc-200"
+                  )}
+                  onClick={() => setTerminalTab("chat" as any)}
                 >
                   CHAT
                 </span>
-                <span 
-                  className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'interactive' && "text-zinc-200")} 
-                  onClick={() => setTerminalTab('interactive')}
+                <span
+                  className={cn(
+                    "cursor-pointer hover:text-zinc-300 transition-colors",
+                    terminalTab === "interactive" && "text-zinc-200"
+                  )}
+                  onClick={() => setTerminalTab("interactive")}
                 >
                   TERMINAL
                 </span>
-                <span 
-                  className={cn("cursor-pointer hover:text-zinc-300 transition-colors", terminalTab === 'logs' && "text-zinc-200")} 
-                  onClick={() => setTerminalTab('logs')}
+                <span
+                  className={cn(
+                    "cursor-pointer hover:text-zinc-300 transition-colors",
+                    terminalTab === "logs" && "text-zinc-200"
+                  )}
+                  onClick={() => setTerminalTab("logs")}
                 >
                   OUTPUT
                 </span>
-                <span className="cursor-pointer hover:text-zinc-300 transition-colors">DEBUG</span>
+                <span className="cursor-pointer hover:text-zinc-300 transition-colors">
+                  DEBUG
+                </span>
               </div>
             </div>
-            
+
             {/* Content Area */}
             <div className="flex-1 overflow-hidden">
-              {terminalTab === 'chat' || !(terminalTab === 'interactive' || terminalTab === 'logs') ? (
+              {terminalTab === "chat" ||
+              !(terminalTab === "interactive" || terminalTab === "logs") ? (
                 <ScrollArea className="h-full px-4 pb-3">
                   <div className="space-y-3 pt-2">
                     {/* Architect Message 1 */}
                     <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
+                      <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">
+                        A
+                      </div>
                       <div className="flex-1">
-                        <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
-                        <div className="text-[10px] text-zinc-500 leading-relaxed">Analyzing requirements for new auth module...</div>
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">
+                          Architect
+                        </div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">
+                          Analyzing requirements for new auth module...
+                        </div>
                       </div>
                     </div>
 
                     {/* Architect Message 2 */}
                     <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">A</div>
+                      <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[8px] font-bold text-purple-400 shrink-0 mt-0.5">
+                        A
+                      </div>
                       <div className="flex-1">
-                        <div className="text-[10px] font-bold text-zinc-400 mb-1">Architect</div>
-                        <div className="text-[10px] text-zinc-500 leading-relaxed">Plan created. Using JWT + OAuth2 strategy.</div>
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">
+                          Architect
+                        </div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">
+                          Plan created. Using JWT + OAuth2 strategy.
+                        </div>
                       </div>
                     </div>
 
                     {/* Dev Message */}
                     <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400 shrink-0 mt-0.5">D</div>
+                      <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[8px] font-bold text-emerald-400 shrink-0 mt-0.5">
+                        D
+                      </div>
                       <div className="flex-1">
-                        <div className="text-[10px] font-bold text-zinc-400 mb-1">Dev</div>
-                        <div className="text-[10px] text-zinc-500 leading-relaxed">Received plan. Starting implementation.</div>
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">
+                          Dev
+                        </div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">
+                          Received plan. Starting implementation.
+                        </div>
                       </div>
                     </div>
 
                     {/* QA Message */}
                     <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-400 shrink-0 mt-0.5">Q</div>
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-400 shrink-0 mt-0.5">
+                        Q
+                      </div>
                       <div className="flex-1">
-                        <div className="text-[10px] font-bold text-zinc-400 mb-1">QA</div>
-                        <div className="text-[10px] text-zinc-500 leading-relaxed">Test suite ready. Waiting for build.</div>
+                        <div className="text-[10px] font-bold text-zinc-400 mb-1">
+                          QA
+                        </div>
+                        <div className="text-[10px] text-zinc-500 leading-relaxed">
+                          Test suite ready. Waiting for build.
+                        </div>
                       </div>
                     </div>
                   </div>
                 </ScrollArea>
-              ) : terminalTab === 'logs' ? (
+              ) : terminalTab === "logs" ? (
                 <LiveTerminal />
               ) : (
                 projectId && <InteractiveTerminal projectId={projectId} />
@@ -554,21 +739,21 @@ function WorkspaceContent() {
             </div>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
 
 export default function WorkspacePage() {
   return (
-    <React.Suspense fallback={
-      <div className="h-screen bg-background flex items-center justify-center text-zinc-500 font-mono">
-        <Loader2 className="h-6 w-6 animate-spin mr-3" />
-        LOADING WORKSPACE...
-      </div>
-    }>
+    <React.Suspense
+      fallback={
+        <div className="h-screen bg-background flex items-center justify-center text-zinc-500 font-mono">
+          <Loader2 className="h-6 w-6 animate-spin mr-3" />
+          LOADING WORKSPACE...
+        </div>
+      }
+    >
       <WorkspaceContent />
     </React.Suspense>
   );

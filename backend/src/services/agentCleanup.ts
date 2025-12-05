@@ -3,16 +3,14 @@
  * Removes project-specific agents when project completes
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 /**
  * Clean up all agents for a specific project
  */
 export async function cleanupProjectAgents(projectId: string): Promise<number> {
   console.log(`[AgentCleanup] Cleaning up agents for project ${projectId}...`);
-  
+
   try {
     const result = await prisma.agent.deleteMany({
       where: {
@@ -22,7 +20,9 @@ export async function cleanupProjectAgents(projectId: string): Promise<number> {
       },
     });
 
-    console.log(`[AgentCleanup] Removed ${result.count} agents from project ${projectId}`);
+    console.log(
+      `[AgentCleanup] Removed ${result.count} agents from project ${projectId}`
+    );
     return result.count;
   } catch (error: any) {
     console.error(`[AgentCleanup] Failed to cleanup agents:`, error.message);
@@ -34,11 +34,11 @@ export async function cleanupProjectAgents(projectId: string): Promise<number> {
  * Clean up agents from all completed projects
  */
 export async function cleanupCompletedProjects(): Promise<number> {
-  console.log('[AgentCleanup] Cleaning up all completed projects...');
-  
+  console.log("[AgentCleanup] Cleaning up all completed projects...");
+
   const completedProjects = await prisma.project.findMany({
     where: {
-      status: 'COMPLETED',
+      status: "COMPLETED",
     },
     select: { id: true },
   });

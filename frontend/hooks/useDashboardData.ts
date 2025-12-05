@@ -6,7 +6,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { dashboardAPI } from "@/lib/api";
 import { useWebSocket } from "@/providers/WebSocketProvider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+
+// Global callback for new project events
+let onNewProjectCallback: ((project: any) => void) | null = null;
+
+export function setOnNewProjectCallback(cb: ((project: any) => void) | null) {
+  onNewProjectCallback = cb;
+}
 
 export function useDashboardData() {
   const queryClient = useQueryClient();
@@ -43,12 +50,29 @@ export function useDashboardData() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     });
 
+    // Listen for new project creation
+    socket.on("project:created", (newProject: any) => {
+      console.log("[WebSocket] New project created:", newProject.id);
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Notify any listeners (like Pipeline page)
+      if (onNewProjectCallback) {
+        onNewProjectCallback(newProject);
+      }
+    });
+
+    // Listen for project updates
+    socket.on("project:update", (project: any) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    });
+
     return () => {
       socket.off("task:update");
       socket.off("task:created");
       socket.off("agent:update");
       socket.off("log:new");
       socket.off("module:update");
+      socket.off("project:created");
+      socket.off("project:update");
     };
   }, [socket, queryClient]);
 
@@ -89,6 +113,15 @@ export function useDashboardData() {
     refetchInterval: 10000,
   });
 
+  const teamProgress = useQuery({
+    queryKey: ["teamProgress"],
+    queryFn: async () => {
+      const response = await dashboardAPI.getTeamProgress();
+      return response.data;
+    },
+    refetchInterval: 5000,
+  });
+
   return {
     agents: agents.data || [],
     tasks: tasks.data || { stats: {}, queued: [], assigned: [], completed: [] },
@@ -96,12 +129,84 @@ export function useDashboardData() {
     logs: realtimeLogs,
     governanceStats: governance.data?.stats || {},
     metrics: metrics.data || {},
+    teamProgress: teamProgress.data || { summary: {}, agents: [] },
     isLoading:
       agents.isLoading ||
       tasks.isLoading ||
       governance.isLoading ||
       metrics.isLoading,
   };
+}
+
+// Hook for project-filtered tasks (for Pipeline page)
+export function useProjectTasks(projectId: string | null) {
+  const queryClient = useQueryClient();
+  const { socket } = useWebSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("task:update", () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    });
+
+    socket.on("task:created", () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    });
+
+    return () => {
+      socket.off("task:update");
+      socket.off("task:created");
+    };
+  }, [socket, queryClient, projectId]);
+
+  return useQuery({
+    queryKey: ["tasks", projectId],
+    queryFn: async () => {
+      const response = await dashboardAPI.getTasks(projectId || undefined);
+      return response.data;
+    },
+    refetchInterval: 5000,
+  });
+}
+
+// Hook for project-filtered agents (for Agents page)
+export function useProjectAgents(projectId: string | null) {
+  const queryClient = useQueryClient();
+  const { socket } = useWebSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("agent:update", () => {
+      queryClient.invalidateQueries({ queryKey: ["agents", projectId] });
+    });
+
+    return () => {
+      socket.off("agent:update");
+    };
+  }, [socket, queryClient, projectId]);
+
+  return useQuery({
+    queryKey: ["agents", projectId],
+    queryFn: async () => {
+      const response = await dashboardAPI.getAgents(projectId || undefined);
+      return response.data.agents;
+    },
+    refetchInterval: 5000,
+  });
+}
+
+// Hook to get all projects
+export function useProjects() {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const response = await dashboardAPI.getProjects();
+      return response.data;
+    },
+    refetchInterval: 30000,
+  });
 }
 
 export function useEscalations() {

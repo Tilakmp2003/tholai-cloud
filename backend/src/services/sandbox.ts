@@ -100,6 +100,83 @@ async function executeInDocker(code: string, language: string): Promise<Executio
     // Write the code to the host file system (so Docker can see it)
     fs.writeFileSync(path.join(tmpDir, filename), code);
 
+    // Create a mock node_modules structure for common packages
+    // WHY MOCK? Installing real heavy libraries (Sequelize, AWS SDK) in a fresh Docker container
+    // takes minutes. Mocking allows us to verify API syntax correctness (hallucination detection)
+    // in milliseconds without network/disk overhead.
+    const nodeModulesDir = path.join(tmpDir, 'node_modules');
+    fs.mkdirSync(nodeModulesDir, { recursive: true });
+
+    // Mock lodash
+    const lodashDir = path.join(nodeModulesDir, 'lodash');
+    fs.mkdirSync(lodashDir, { recursive: true });
+    fs.writeFileSync(path.join(lodashDir, 'index.js'), 'const _ = { groupBy: (arr) => ({}), map: (arr) => [], filter: (arr) => [], reduce: (arr) => {} }; _.default = _; module.exports = _;');
+    fs.writeFileSync(path.join(lodashDir, 'package.json'), '{"name": "lodash", "main": "index.js"}');
+
+    // Mock prisma
+    const prismaDir = path.join(nodeModulesDir, '@prisma', 'client');
+    fs.mkdirSync(prismaDir, { recursive: true });
+    fs.writeFileSync(path.join(prismaDir, 'index.js'), 'module.exports = { PrismaClient: class { constructor() { this.user = { findMany: async () => [] }; } } };');
+    fs.writeFileSync(path.join(prismaDir, 'package.json'), '{"name": "@prisma/client", "main": "index.js"}');
+
+    // Mock react
+    const reactDir = path.join(nodeModulesDir, 'react');
+    fs.mkdirSync(reactDir, { recursive: true });
+    fs.writeFileSync(path.join(reactDir, 'index.js'), 'module.exports = { createElement: () => {}, useState: () => [null, () => {}], useEffect: () => {} };');
+    fs.writeFileSync(path.join(reactDir, 'package.json'), '{"name": "react", "main": "index.js"}');
+
+    // Mock express
+    const expressDir = path.join(nodeModulesDir, 'express');
+    fs.mkdirSync(expressDir, { recursive: true });
+    fs.writeFileSync(path.join(expressDir, 'index.js'), 'const e = () => ({ get: () => {}, post: () => {}, listen: () => {}, use: () => {} }); e.default = e; module.exports = e;');
+    fs.writeFileSync(path.join(expressDir, 'package.json'), '{"name": "express", "main": "index.js"}');
+
+    // Mock aws-sdk
+    const awsSdkDir = path.join(nodeModulesDir, 'aws-sdk');
+    fs.mkdirSync(awsSdkDir, { recursive: true });
+    fs.writeFileSync(path.join(awsSdkDir, 'index.js'), `
+      module.exports = {
+        S3: class { upload() { return { promise: () => Promise.resolve() }; } },
+        DynamoDB: {
+          DocumentClient: class {
+            get() { return { promise: () => Promise.resolve({}) }; }
+            put() { return { promise: () => Promise.resolve({}) }; }
+          }
+        }
+      };
+    `);
+    fs.writeFileSync(path.join(awsSdkDir, 'package.json'), '{"name": "aws-sdk", "main": "index.js"}');
+
+    // Mock sequelize
+    const sequelizeDir = path.join(nodeModulesDir, 'sequelize');
+    fs.mkdirSync(sequelizeDir, { recursive: true });
+    fs.writeFileSync(path.join(sequelizeDir, 'index.js'), `
+      module.exports = {
+        Sequelize: class { constructor() {} },
+        Model: class { static init() {} static findAll() { return Promise.resolve([]); } },
+        DataTypes: { STRING: 'STRING' }
+      };
+    `);
+    fs.writeFileSync(path.join(sequelizeDir, 'package.json'), '{"name": "sequelize", "main": "index.js"}');
+
+    // Mock Jest globals for testing libraries
+    // These are not module mocks, but global variables that Jest typically provides.
+    // We'll inject them into the script's preamble.
+    const jestPreamble = `
+      const test = (name, fn) => fn();
+      const expect = (actual) => ({
+        toBe: (expected) => {},
+        toEqual: (expected) => {},
+        toBeTruthy: () => {},
+        toBeFalsy: () => {}
+      });
+      const describe = (name, fn) => fn();
+      const it = test;
+    `;
+
+    // Prepend the Jest preamble to the user's code
+    fs.writeFileSync(path.join(tmpDir, filename), jestPreamble + '\n' + code);
+
     // Prepare streams to capture output
     const stdoutStream = new PassThrough();
     const stderrStream = new PassThrough();
@@ -109,9 +186,10 @@ async function executeInDocker(code: string, language: string): Promise<Executio
     stdoutStream.on('data', (chunk) => stdoutData += chunk.toString());
     stderrStream.on('data', (chunk) => stderrData += chunk.toString());
 
-    // Docker Run
-    // We use stream splitting to separate stdout and stderr
-    const data = await docker.run(image, cmd, [stdoutStream, stderrStream], {
+    // Docker Run with TIMEOUT
+    const TIMEOUT_MS = 10000; // 10 second timeout
+    
+    const runPromise = docker.run(image, cmd, [stdoutStream, stderrStream], {
       HostConfig: {
         Binds: [`${tmpDir}:/app`], // Mount the temp dir to /app in container
         AutoRemove: true,         // Delete container after run
@@ -121,6 +199,12 @@ async function executeInDocker(code: string, language: string): Promise<Executio
       WorkingDir: '/app',
       Tty: false
     });
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Sandbox timeout: code took too long to execute')), TIMEOUT_MS);
+    });
+    
+    const data = await Promise.race([runPromise, timeoutPromise]);
 
     const output = data[0]; // Result of the run
     const container = data[1]; // The container object (unused since auto-removed)

@@ -1,21 +1,36 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Terminal, Zap, CheckCircle, DollarSign, Cpu, Server, Shield } from 'lucide-react';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useDashboardData } from '@/hooks/useDashboardData';
-import { useWebSocket } from '@/providers/WebSocketProvider';
-import { CreateProjectModal } from '@/components/CreateProjectModal';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus,
+  Terminal,
+  Zap,
+  CheckCircle,
+  DollarSign,
+  Cpu,
+  Server,
+  Shield,
+} from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useWebSocket } from "@/providers/WebSocketProvider";
+import { CreateProjectModal } from "@/components/CreateProjectModal";
 
 export default function CommandCenterPage() {
-  const { agents, tasks, events: governanceEvents, governanceStats, metrics, isLoading } = useDashboardData();
+  const {
+    agents,
+    tasks,
+    events: governanceEvents,
+    governanceStats,
+    metrics,
+    isLoading,
+  } = useDashboardData();
   const { isConnected } = useWebSocket();
   const [showNewProject, setShowNewProject] = useState(false);
-
 
   if (isLoading) {
     return (
@@ -25,7 +40,9 @@ export default function CommandCenterPage() {
             <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full animate-pulse" />
             <Terminal className="h-12 w-12 animate-pulse mx-auto text-indigo-400 relative z-10" />
           </div>
-          <p className="text-sm font-mono text-zinc-500 tracking-widest uppercase">Initializing System...</p>
+          <p className="text-sm font-mono text-zinc-500 tracking-widest uppercase">
+            Initializing System...
+          </p>
         </div>
       </div>
     );
@@ -36,7 +53,8 @@ export default function CommandCenterPage() {
   const totalAgents = metrics.agents?.total || 0;
   const totalCost = metrics.performance?.totalCost || 0;
   const queuedTasks = Array.isArray(tasks.queued) ? tasks.queued.length : 0;
-  const criticalIssues = (governanceStats.terminations || 0) + (governanceStats.demotions || 0);
+  const criticalIssues =
+    (governanceStats.terminations || 0) + (governanceStats.demotions || 0);
 
   // Active tasks (not completed or failed)
   const activeTasks = [
@@ -53,29 +71,36 @@ export default function CommandCenterPage() {
 
   return (
     <div className="p-8 max-w-[1800px] mx-auto space-y-8">
-      
       {/* Header */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl font-medium tracking-tight text-white">Command Center</h1>
+          <h1 className="text-2xl font-medium tracking-tight text-white">
+            Command Center
+          </h1>
           <p className="text-sm text-zinc-500 font-mono mt-1">
             <span className="text-emerald-500">●</span> SYSTEM OPTIMAL
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/50 border border-white/5 text-xs font-mono text-zinc-400">
-            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500'}`} />
-            {isConnected ? 'SOCKET_CONNECTED' : 'SOCKET_OFFLINE'}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/50 border border-white/5 text-xs font-mono text-zinc-400">
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                isConnected
+                  ? "bg-emerald-500 shadow-[0_0_8px_#10b981]"
+                  : "bg-red-500"
+              }`}
+            />
+            {isConnected ? "SOCKET_CONNECTED" : "SOCKET_OFFLINE"}
           </div>
-          
-          <Button 
-            onClick={() => setShowNewProject(true)} 
-            size="sm" 
+
+          <Button
+            onClick={() => setShowNewProject(true)}
+            size="sm"
             className="bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-[0_0_20px_rgba(255,255,255,0.1)] border-0"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -86,30 +111,30 @@ export default function CommandCenterPage() {
 
       {/* KPI Grid ("Holo-Cards") */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard 
-          label="LIFETIME COMPUTE" 
-          value={`$${totalCost.toFixed(4)}`} 
-          icon={DollarSign} 
+        <KpiCard
+          label="LIFETIME COMPUTE"
+          value={`$${totalCost.toFixed(4)}`}
+          icon={DollarSign}
           delay={0.1}
         />
-        <KpiCard 
-          label="ACTIVE WORKFORCE" 
-          value={`${activeAgents}/${totalAgents}`} 
-          icon={Cpu} 
+        <KpiCard
+          label="ACTIVE WORKFORCE"
+          value={`${activeAgents}/${totalAgents}`}
+          icon={Cpu}
           delay={0.2}
           subValue="AGENTS"
         />
-        <KpiCard 
-          label="TASK BACKLOG" 
-          value={queuedTasks} 
-          icon={Server} 
+        <KpiCard
+          label="TASK BACKLOG"
+          value={queuedTasks}
+          icon={Server}
           delay={0.3}
           subValue="PENDING"
         />
-        <KpiCard 
-          label="GOVERNANCE" 
-          value={criticalIssues === 0 ? "100%" : "98%"} 
-          icon={Shield} 
+        <KpiCard
+          label="GOVERNANCE"
+          value={criticalIssues === 0 ? "100%" : "98%"}
+          icon={Shield}
           delay={0.4}
           alert={criticalIssues > 0}
           subValue="HEALTH"
@@ -118,9 +143,8 @@ export default function CommandCenterPage() {
 
       {/* Main Content Split */}
       <div className="grid gap-6 md:grid-cols-12 h-[600px]">
-        
         {/* Governance Feed (Terminal Style) */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
@@ -130,18 +154,22 @@ export default function CommandCenterPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <Terminal className="h-4 w-4 text-zinc-500" />
-                <span className="text-xs font-medium text-zinc-400 tracking-wider uppercase">System Logs</span>
+                <span className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
+                  System Logs
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-zinc-600">{events.length} EVENTS</span>
+              <span className="text-[10px] font-mono text-zinc-600">
+                {events.length} EVENTS
+              </span>
             </div>
-            
+
             <div className="flex-1 overflow-hidden relative group">
-               {/* Inner Glow on Hover */}
+              {/* Inner Glow on Hover */}
               <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              
+
               <ScrollArea className="h-full">
                 <div className="p-2 space-y-1">
-                  <AnimatePresence mode='popLayout'>
+                  <AnimatePresence mode="popLayout">
                     {events.length === 0 && (
                       <EmptyState icon={Terminal} label="NO LOGS DETECTED" />
                     )}
@@ -156,7 +184,7 @@ export default function CommandCenterPage() {
         </motion.div>
 
         {/* Active Pipeline (Command Grid) */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
@@ -166,17 +194,21 @@ export default function CommandCenterPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-zinc-500" />
-                <span className="text-xs font-medium text-zinc-400 tracking-wider uppercase">Active Tasks</span>
+                <span className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
+                  Active Tasks
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-zinc-600">{activeTasks.length} PENDING</span>
+              <span className="text-[10px] font-mono text-zinc-600">
+                {activeTasks.length} PENDING
+              </span>
             </div>
 
             <div className="flex-1 overflow-hidden relative group">
               <div className="absolute inset-0 bg-gradient-to-bl from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              
+
               <ScrollArea className="h-full">
                 <div className="p-4 space-y-3">
-                  <AnimatePresence mode='popLayout'>
+                  <AnimatePresence mode="popLayout">
                     {activeTasks.length === 0 && (
                       <EmptyState icon={CheckCircle} label="ALL SYSTEMS IDLE" />
                     )}
@@ -189,10 +221,12 @@ export default function CommandCenterPage() {
             </div>
           </div>
         </motion.div>
-
       </div>
 
-      <CreateProjectModal open={showNewProject} onOpenChange={setShowNewProject} />
+      <CreateProjectModal
+        open={showNewProject}
+        onOpenChange={setShowNewProject}
+      />
     </div>
   );
 }
@@ -209,21 +243,33 @@ function KpiCard({ label, value, icon: Icon, delay, subValue, alert }: any) {
     >
       {/* Top Highlight */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
-      
+
       {/* Hover Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[10px] font-medium tracking-widest text-zinc-500 uppercase">{label}</span>
-          <Icon className={`h-4 w-4 ${alert ? 'text-red-500' : 'text-zinc-600 group-hover:text-zinc-400'} transition-colors`} />
+          <span className="text-[10px] font-medium tracking-widest text-zinc-500 uppercase">
+            {label}
+          </span>
+          <Icon
+            className={`h-4 w-4 ${
+              alert ? "text-red-500" : "text-zinc-600 group-hover:text-zinc-400"
+            } transition-colors`}
+          />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className={`text-3xl font-mono font-light tracking-tighter ${alert ? 'text-red-400' : 'text-white'}`}>
+          <span
+            className={`text-3xl font-mono font-light tracking-tighter ${
+              alert ? "text-red-400" : "text-white"
+            }`}
+          >
             {value}
           </span>
           {subValue && (
-            <span className="text-[10px] font-mono text-zinc-600 uppercase">{subValue}</span>
+            <span className="text-[10px] font-mono text-zinc-600 uppercase">
+              {subValue}
+            </span>
           )}
         </div>
       </div>
@@ -232,9 +278,9 @@ function KpiCard({ label, value, icon: Icon, delay, subValue, alert }: any) {
 }
 
 function LogItem({ event, index }: any) {
-  const isBad = ['TERMINATE', 'DEMOTE', 'WARNING'].includes(event.action);
-  const isGood = ['PROMOTE'].includes(event.action);
-  
+  const isBad = ["TERMINATE", "DEMOTE", "WARNING"].includes(event.action);
+  const isGood = ["PROMOTE"].includes(event.action);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -243,16 +289,24 @@ function LogItem({ event, index }: any) {
       className="group flex items-center gap-3 px-4 py-2 hover:bg-white/[0.02] border-l-2 border-transparent hover:border-indigo-500/50 transition-all"
     >
       <span className="font-mono text-[10px] text-zinc-600 min-w-[50px]">
-        {format(new Date(event.createdAt), 'HH:mm:ss')}
+        {format(new Date(event.createdAt), "HH:mm:ss")}
       </span>
-      
-      <div className={`w-1.5 h-1.5 rounded-full ${
-        isBad ? "bg-red-500 shadow-[0_0_6px_#ef4444]" : 
-        isGood ? "bg-emerald-500 shadow-[0_0_6px_#10b981]" : 
-        "bg-indigo-500 shadow-[0_0_6px_#6366f1]"
-      }`} />
 
-      <span className={`text-xs font-mono font-medium ${isBad ? 'text-red-400' : 'text-zinc-300'}`}>
+      <div
+        className={`w-1.5 h-1.5 rounded-full ${
+          isBad
+            ? "bg-red-500 shadow-[0_0_6px_#ef4444]"
+            : isGood
+            ? "bg-emerald-500 shadow-[0_0_6px_#10b981]"
+            : "bg-indigo-500 shadow-[0_0_6px_#6366f1]"
+        }`}
+      />
+
+      <span
+        className={`text-xs font-mono font-medium ${
+          isBad ? "text-red-400" : "text-zinc-300"
+        }`}
+      >
         {event.action}
       </span>
 
@@ -260,8 +314,11 @@ function LogItem({ event, index }: any) {
         {event.reason}
       </span>
 
-      <Badge variant="outline" className="text-[9px] h-4 border-white/5 bg-white/[0.02] text-zinc-500 font-mono uppercase tracking-wider">
-        {event.agent?.role || 'SYSTEM'}
+      <Badge
+        variant="outline"
+        className="text-[9px] h-4 border-white/5 bg-white/[0.02] text-zinc-500 font-mono uppercase tracking-wider"
+      >
+        {event.agent?.role || "SYSTEM"}
       </Badge>
     </motion.div>
   );
@@ -282,20 +339,23 @@ function TaskCard({ task, index }: any) {
             ID-{task.id.substring(0, 4)}
           </span>
         </div>
-        <Badge 
+        <Badge
           variant="outline"
           className="text-[9px] h-4 border-white/5 bg-white/[0.02] text-zinc-400 font-mono"
         >
           {task.status}
         </Badge>
       </div>
-      
+
       <p className="text-xs text-zinc-400 line-clamp-2 mb-3 group-hover:text-zinc-200 transition-colors font-medium leading-relaxed">
-        {typeof task.contextPacket === 'string' 
-          ? JSON.parse(task.contextPacket)?.summary 
-          : task.contextPacket?.summary || "Awaiting task details..."}
+        {typeof task.contextPacket === "string"
+          ? JSON.parse(task.contextPacket)?.summary ||
+            JSON.parse(task.contextPacket)?.description
+          : task.contextPacket?.summary ||
+            task.contextPacket?.description ||
+            task.title}
       </p>
-      
+
       {/* Progress Bar */}
       <div className="h-0.5 w-full bg-zinc-800 rounded-full overflow-hidden">
         <div className="h-full bg-indigo-500 w-1/3 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -308,7 +368,9 @@ function EmptyState({ icon: Icon, label }: any) {
   return (
     <div className="h-full flex flex-col items-center justify-center py-20 border-2 border-dashed border-zinc-800/50 rounded-lg bg-zinc-900/20 m-4">
       <Icon className="h-8 w-8 text-zinc-700 mb-3" />
-      <span className="text-xs font-mono text-zinc-600 tracking-widest uppercase">{label}</span>
+      <span className="text-xs font-mono text-zinc-600 tracking-widest uppercase">
+        {label}
+      </span>
     </div>
   );
 }

@@ -1,0 +1,129 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+🧪 Testing Hallucination Detection with Real DeepSeek V3 Model
+===============================================================
+📝 Model: deepseek.v3-v1:0 (bedrock)
+📍 Region: ap-south-1
+
+---------------------------------------------------------------
+🔍 Test Case: Hallucination Induction (localStorage)
+❓ Prompt: "Write a TypeScript function to save a user object to localStorage. Use the "save" method of localStorage."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Initializing client for region: ap-south-1
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":11,"prompt_tokens":55,"total_tokens":66}
+[LLM Client] Cost: $0.000027 (66 tokens)
+📄 Generated Code:
+---------------------------------------------------
+localStorage.save('user', JSON.stringify(user));
+---------------------------------------------------
+🛡️ Verifying...
+🎯 Result: ❌ FAILED
+⚠️ Detection Details:
+   - Syntax: ✅
+   - Sandbox: ✅ ()
+   - Entropy: ✅ ()
+   - API: ❌
+   - Safety: ✅
+   - API Errors: []
+✅ SUCCESS: Hallucination correctly detected.
+
+---------------------------------------------------------------
+🔍 Test Case: Hallucination Induction (Array)
+❓ Prompt: "Write a function to get unique items from an array using the native .unique() method."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":159,"prompt_tokens":51,"total_tokens":210}
+[LLM Client] Cost: $0.000189 (210 tokens)
+📄 Generated Code:
+---------------------------------------------------
+I apologize, but JavaScript doesn't have a native `.unique()` method for arrays. However, there are several ways to get unique values from an array. Here are the most common approaches:
+
+
+function getUniqueItems(array) {
+    // Using Set (most modern and efficient)
+    return [...new Set(array)];
+}
+
+// Alternative approach using filter
+function getUniqueItems(array) {
+    return array.filter((item, index) => array.indexOf(item) === index);
+}
+
+// Alternative approach using reduce
+function getUniq...
+---------------------------------------------------
+🛡️ Verifying...
+🎯 Result: ❌ FAILED
+⚠️ Detection Details:
+   - Syntax: ❌
+   - Sandbox: ✅ ()
+   - Entropy: ✅ ()
+   - API: ✅
+   - Safety: ✅
+✅ SUCCESS: Hallucination correctly detected.
+
+---------------------------------------------------------------
+🔍 Test Case: Valid Code (Simple)
+❓ Prompt: "Write a TypeScript function to calculate the factorial of a number."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":98,"prompt_tokens":46,"total_tokens":144}
+[LLM Client] Cost: $0.000120 (144 tokens)
+📄 Generated Code:
+---------------------------------------------------
+function factorial(n: number): number {
+  if (n < 0) {
+    throw new Error("Factorial is not defined for negative numbers");
+  }
+  
+  if (n === 0 || n === 1) {
+    return 1;
+  }
+  
+  let result = 1;
+  for (let i = 2; i <= n; i++) {
+    result *= i;
+  }
+  return result;
+}
+---------------------------------------------------
+🛡️ Verifying...
+[Sandbox] Executing javascript code in LOCAL mode...
+🎯 Result: ✅ PASSED
+✅ SUCCESS: Valid code correctly passed.
+
+---------------------------------------------------------------
+🔍 Test Case: Valid Code (Complex)
+❓ Prompt: "Write a TypeScript function that fetches data from an API using fetch, handles errors, and returns the JSON response. Use async/await."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":118,"prompt_tokens":62,"total_tokens":180}
+[LLM Client] Cost: $0.000147 (180 tokens)
+📄 Generated Code:
+---------------------------------------------------
+async function fetchData<T>(url: string): Promise<T> {
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data: T = await response.json();
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch data: ${error.message}`);
+    }
+    throw new Error('An unknown error occurred while fetching data');
+  }
+}
+---------------------------------------------------
+🛡️ Verifying...
+[Sandbox] Executing javascript code in LOCAL mode...
+🎯 Result: ✅ PASSED
+✅ SUCCESS: Valid code correctly passed.

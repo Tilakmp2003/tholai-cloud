@@ -3,78 +3,46 @@
  * Creates agents dynamically per project with proper namespacing
  */
 
-import { PrismaClient } from '@prisma/client';
-import { AgentAllocation } from './agentAllocator';
-import { emitAgentUpdate } from '../websocket/socketServer';
-import { getAgentConfig } from '../llm/modelRegistry';
+import { prisma } from "../lib/prisma";
+import { AgentAllocation } from "./agentAllocator";
+import { emitAgentUpdate } from "../websocket/socketServer";
+import { getAgentConfig } from "../llm/modelRegistry";
 
-
-const prisma = new PrismaClient();
-
-// Map allocation roles to schema roles
+// Map allocation roles to schema roles (consistent casing with task requiredRole)
 const ROLE_MAPPING: Record<string, string> = {
-  architect: 'Architect',
-  teamLead: 'TeamLead',
-  seniorDev: 'SeniorDev',
-  midDev: 'MidDev',
-  juniorDev: 'JuniorDev',
-  qa: 'QA',
-  security: 'SecurityAnalyst',
-  ops: 'DevOps',
+  architect: "Architect",
+  teamLead: "TeamLead",
+  seniorDev: "SeniorDev",
+  midDev: "MidDev",
+  juniorDev: "JuniorDev",
+  qa: "QA",
+  security: "SecurityAnalyst",
+  ops: "AgentOps",
+  designer: "Designer",
+  canary: "Canary",
+  testGenerator: "TestGenerator",
 };
 
 /**
  * Spawn agents for a specific project
+ * DISABLED: Now uses global evolution pool instead of per-project agents
+ * This prevents agent count from growing with each new project
  */
 export async function spawnAgents(
   projectId: string,
   allocation: AgentAllocation
 ): Promise<number> {
-  console.log(`[AgentSpawner] Spawning agents for project ${projectId}...`);
+  console.log(`[AgentSpawner] Project ${projectId} will use global agent pool (spawning disabled)`);
   
-  let spawnedCount = 0;
-
-  for (const [roleKey, count] of Object.entries(allocation)) {
-    if (count === 0) continue;
-
-    const schemaRole = ROLE_MAPPING[roleKey];
-    if (!schemaRole) {
-      console.warn(`[AgentSpawner] Unknown role: ${roleKey}`);
-      continue;
+  // Count how many agents are available in the global pool
+  const globalAgents = await prisma.agent.count({
+    where: {
+      id: { not: { startsWith: 'proj_' } }
     }
-
-    for (let i = 1; i <= count; i++) {
-      const agentId = `proj_${projectId}_${roleKey}_${i}`;
-      
-      try {
-        const agent = await prisma.agent.create({
-          data: {
-            id: agentId,
-            role: schemaRole,
-            specialization: schemaRole, // Use role as specialization
-            status: 'IDLE',
-            modelConfig: await getAgentConfig(schemaRole) as any,
-            lastActiveAt: new Date(),
-          },
-        });
-
-        emitAgentUpdate(agent);
-
-        spawnedCount++;
-        console.log(`[AgentSpawner] Created ${agentId}`);
-      } catch (error: any) {
-        if (error.code === 'P2002') {
-          // Agent already exists, skip
-          console.log(`[AgentSpawner] Agent ${agentId} already exists, skipping`);
-        } else {
-          console.error(`[AgentSpawner] Failed to create ${agentId}:`, error.message);
-        }
-      }
-    }
-  }
-
-  console.log(`[AgentSpawner] Spawned ${spawnedCount} agents for project ${projectId}`);
-  return spawnedCount;
+  });
+  
+  console.log(`[AgentSpawner] Global pool has ${globalAgents} agents available`);
+  return 0; // No new agents spawned
 }
 
 /**

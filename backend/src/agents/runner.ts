@@ -7,20 +7,63 @@ import { runTeamLeadResolutionOnce } from "./teamLeadResolutionAgent";
 import { runGovernanceLoopOnce } from "../governance/governanceLoop";
 import { logger } from "../services/logger";
 import { invokeAgentLambda } from "../services/lambdaInvoker";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma";
 import { runArchitectAgentOnce } from "./architectAgent";
 import { runSeniorDevAgentOnce } from "./seniorDevAgent";
 import { runAgentOpsAgentOnce } from "./agentOpsAgent";
 import { runCanaryAgentOnce } from "./canaryAgent";
 import { dispatchTasks } from "../services/taskDispatcher";
 
-const prisma = new PrismaClient();
+/**
+ * Cleanup agents that are stuck in BUSY state but have no active task
+ * This can happen when tasks complete/fail but agent status isn't updated
+ */
+async function cleanupStuckAgents() {
+  try {
+    const busyAgents = await prisma.agent.findMany({
+      where: { status: "BUSY" },
+    });
+
+    let released = 0;
+    for (const agent of busyAgents) {
+      // Check if the agent's current task is still active
+      if (!agent.currentTaskId) {
+        // No task assigned but marked BUSY - release
+        await prisma.agent.update({
+          where: { id: agent.id },
+          data: { status: "IDLE", currentTaskId: null },
+        });
+        released++;
+        continue;
+      }
+
+      const task = await prisma.task.findUnique({
+        where: { id: agent.currentTaskId },
+      });
+
+      // If task doesn't exist or is completed/failed, release the agent
+      if (!task || !["ASSIGNED", "IN_PROGRESS"].includes(task.status)) {
+        await prisma.agent.update({
+          where: { id: agent.id },
+          data: { status: "IDLE", currentTaskId: null },
+        });
+        released++;
+      }
+    }
+
+    if (released > 0) {
+      logger.log(`[Runner] 🧹 Released ${released} stuck agents`);
+    }
+  } catch (err) {
+    logger.error("[Runner] Cleanup error:", err);
+  }
+}
 
 async function dispatchToLambda() {
   // Find tasks that need processing and dispatch them to Lambda
   const tasks = await prisma.task.findMany({
-    where: { status: 'ASSIGNED' },
-    take: 10
+    where: { status: "ASSIGNED" },
+    take: 10,
   });
 
   for (const task of tasks) {
@@ -29,7 +72,7 @@ async function dispatchToLambda() {
         agentId: task.assignedToAgentId,
         taskId: task.id,
         contextPacket: task.contextPacket,
-        role: task.requiredRole
+        role: task.requiredRole,
       });
     }
   }
@@ -39,28 +82,55 @@ async function loop() {
   try {
     logger.log("[Runner] Cycle started...");
 
-    if (process.env.USE_LAMBDA_AGENTS === 'true') {
+    // Always cleanup stuck agents first
+    await cleanupStuckAgents();
+
+    if (process.env.USE_LAMBDA_AGENTS === "true") {
       logger.log("[Runner] ☁️ Running in Cloud Mode (Lambda Dispatch)");
       await dispatchToLambda();
       await runGovernanceLoopOnce();
     } else {
       logger.log("[Runner] 💻 Running in Local Mode (In-Process)");
-      
+
       // Dispatch queued tasks to agents
-      await dispatchTasks().catch((err) => logger.error("[Runner] Dispatcher error:", err));
+      await dispatchTasks().catch((err) =>
+        logger.error("[Runner] Dispatcher error:", err)
+      );
 
       await Promise.all([
-        runArchitectAgentOnce().catch((err) => logger.error("[Runner] Architect error:", err)),
-        runSeniorDevAgentOnce().catch((err) => logger.error("[Runner] SeniorDev error:", err)),
-        runMidDevAgentOnce().catch((err) => logger.error("[Runner] MidDev error:", err)),
-        runTeamLeadAgentOnce().catch((err) => logger.error("[Runner] TeamLead error:", err)),
-        runDesignerAgentOnce().catch((err) => logger.error("[Runner] Designer error:", err)),
-        runQAAgentOnce().catch((err) => logger.error("[Runner] QA error:", err)),
-        runAgentOpsAgentOnce().catch((err) => logger.error("[Runner] AgentOps error:", err)),
-        runCanaryAgentOnce().catch((err) => logger.error("[Runner] Canary error:", err)),
-        runTestGeneratorAgentOnce().catch((err) => logger.error("[Runner] TestGen error:", err)),
-        runTeamLeadResolutionOnce().catch((err) => logger.error("[Runner] TL-Resolution error:", err)),
-        runGovernanceLoopOnce().catch((err) => logger.error("[Runner] HeadAgent Governance error:", err))
+        runArchitectAgentOnce().catch((err) =>
+          logger.error("[Runner] Architect error:", err)
+        ),
+        runSeniorDevAgentOnce().catch((err) =>
+          logger.error("[Runner] SeniorDev error:", err)
+        ),
+        runMidDevAgentOnce().catch((err) =>
+          logger.error("[Runner] MidDev error:", err)
+        ),
+        runTeamLeadAgentOnce().catch((err) =>
+          logger.error("[Runner] TeamLead error:", err)
+        ),
+        runDesignerAgentOnce().catch((err) =>
+          logger.error("[Runner] Designer error:", err)
+        ),
+        runQAAgentOnce().catch((err) =>
+          logger.error("[Runner] QA error:", err)
+        ),
+        runAgentOpsAgentOnce().catch((err) =>
+          logger.error("[Runner] AgentOps error:", err)
+        ),
+        runCanaryAgentOnce().catch((err) =>
+          logger.error("[Runner] Canary error:", err)
+        ),
+        runTestGeneratorAgentOnce().catch((err) =>
+          logger.error("[Runner] TestGen error:", err)
+        ),
+        runTeamLeadResolutionOnce().catch((err) =>
+          logger.error("[Runner] TL-Resolution error:", err)
+        ),
+        runGovernanceLoopOnce().catch((err) =>
+          logger.error("[Runner] HeadAgent Governance error:", err)
+        ),
       ]);
     }
 
@@ -72,3 +142,4 @@ async function loop() {
 
 // Run every 20 seconds to avoid 429 Rate Limits
 setInterval(loop, 20000);
+

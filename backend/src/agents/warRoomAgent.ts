@@ -1,10 +1,9 @@
-import { PrismaClient } from "@prisma/client";
-import { invokeModel, ModelConfig } from "../services/llmClient";
 import { workspaceManager } from "../services/workspaceManager";
 import { randomUUID } from "crypto";
 import { emitTaskUpdate } from "../websocket/socketServer";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
+import { getAgentConfig } from "../llm/modelRegistry";
+import { callLLM } from "../llm/llmClient";
 
 export async function runWarRoomAgentOnce() {
   // 1. Find a task stuck in WAR_ROOM
@@ -49,22 +48,14 @@ Output JSON ONLY:
 }
 `;
 
-    // 3. Fetch Agent Config and Call Bedrock
-    const agentRecord = await prisma.agent.findFirst({
-      where: { role: "Architect" },
-    }); // War Room uses Architect-level reasoning
-    if (!agentRecord || !agentRecord.modelConfig) {
-      console.error("[WarRoom] Agent config not found. Aborting.");
-      return;
-    }
-    const config = (agentRecord.modelConfig as any).primary as ModelConfig;
+    // 3. Use model registry to get config (ensures DeepSeek V3)
+    const config = await getAgentConfig("Architect");
 
-    const result = await invokeModel(
-      config,
-      "You are the WAR ROOM MEDIATOR.",
-      prompt
-    );
-    let text = result.text.trim();
+    const result = await callLLM(config, [
+      { role: "system", content: "You are the WAR ROOM MEDIATOR." },
+      { role: "user", content: prompt },
+    ]);
+    let text = result.content.trim();
 
     // Extract JSON from response
     const jsonStart = text.indexOf("{");

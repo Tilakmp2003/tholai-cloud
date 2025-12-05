@@ -1,9 +1,7 @@
 // @ts-nocheck
-import { PrismaClient } from "@prisma/client";
 import { invokeModel, ModelConfig } from "../services/llmClient";
 import { randomUUID } from "crypto";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 export async function runTeamLeadResolutionOnce() {
   console.log("[TeamLead-Resolution] Checking escalations...");
@@ -11,7 +9,7 @@ export async function runTeamLeadResolutionOnce() {
   const escalations = await prisma.contextRequest.findMany({
     where: { status: "OPEN" },
     include: { task: true },
-    take: 5
+    take: 5,
   });
 
   if (escalations.length === 0) {
@@ -27,7 +25,9 @@ export async function runTeamLeadResolutionOnce() {
     );
 
     if (!esc.task) {
-      console.error(`[TeamLead-Resolution] Task missing for escalation ${esc.id}`);
+      console.error(
+        `[TeamLead-Resolution] Task missing for escalation ${esc.id}`
+      );
       continue;
     }
 
@@ -42,9 +42,13 @@ export async function runTeamLeadResolutionOnce() {
       // ----------------------------------------------
       // 2. Fetch Agent Config and Ask Bedrock for clarification/fix
       // ----------------------------------------------
-      const agentRecord = await prisma.agent.findFirst({ where: { role: 'TeamLead' } });
+      const agentRecord = await prisma.agent.findFirst({
+        where: { role: "TeamLead" },
+      });
       if (!agentRecord || !agentRecord.modelConfig) {
-        console.error("[TeamLead-Resolution] Agent config not found. Skipping.");
+        console.error(
+          "[TeamLead-Resolution] Agent config not found. Skipping."
+        );
         continue;
       }
       const config = (agentRecord.modelConfig as any).primary as ModelConfig;
@@ -71,18 +75,24 @@ Strict Output (JSON only):
 
       let responseText = "";
       try {
-        const result = await invokeModel(config, "You are a Team Lead Agent.", prompt);
+        const result = await invokeModel(
+          config,
+          "You are a Team Lead Agent.",
+          prompt
+        );
         responseText = result.text;
-
       } catch (err: any) {
-        console.error(`[TeamLead-Resolution] Error invoking LLM for escalation ${esc.id}:`, err);
+        console.error(
+          `[TeamLead-Resolution] Error invoking LLM for escalation ${esc.id}:`,
+          err
+        );
         continue;
       }
 
       // Extract JSON
       let cleaned = responseText.trim();
-      const jsonStart = cleaned.indexOf('{');
-      const jsonEnd = cleaned.lastIndexOf('}');
+      const jsonStart = cleaned.indexOf("{");
+      const jsonEnd = cleaned.lastIndexOf("}");
       if (jsonStart !== -1 && jsonEnd !== -1) {
         cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
       }
@@ -108,11 +118,11 @@ Strict Output (JSON only):
             event: "CLARIFIED",
             actor: "TeamLead",
             message: clarification,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         ],
         lastClarifiedBy: "TeamLead",
-        lastClarifiedAt: new Date().toISOString()
+        lastClarifiedAt: new Date().toISOString(),
       };
 
       // ----------------------------------------------
@@ -126,9 +136,9 @@ Strict Output (JSON only):
           reviewFeedback: {
             ...(esc.task.reviewFeedback as any),
             teamLeadResolution: clarification,
-            teamLeadResolutionAt: new Date().toISOString()
-          }
-        }
+            teamLeadResolutionAt: new Date().toISOString(),
+          },
+        },
       });
 
       // ----------------------------------------------
@@ -139,8 +149,8 @@ Strict Output (JSON only):
         data: {
           status: "RESOLVED",
           resolvedAt: new Date(),
-          resolution: clarification
-        }
+          resolution: clarification,
+        },
       });
 
       // ----------------------------------------------
@@ -155,15 +165,14 @@ Strict Output (JSON only):
           metadata: {
             escalationId: esc.id,
             clarification,
-            patch
-          }
-        }
+            patch,
+          },
+        },
       });
 
       console.log(
         `[TeamLead-Resolution] ✔ Resolved escalation ${esc.id} — task ${esc.taskId} unblocked`
       );
-
     } catch (error) {
       console.error(
         `[TeamLead-Resolution] ❌ Failed to resolve escalation ${esc.id}:`,

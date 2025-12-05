@@ -3,14 +3,25 @@
  * Extracted from existing geminiClient.ts
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { LLMMessage, LLMResponse } from '../types';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { LLMMessage, LLMResponse } from "../types";
 
+// Lazy initialization to allow dotenv to load first
 let genAI: GoogleGenerativeAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-} else {
-  console.warn('[Gemini Provider] GEMINI_API_KEY not set. Gemini will be unavailable.');
+let initialized = false;
+
+function getGeminiClient(): GoogleGenerativeAI | null {
+  if (!initialized) {
+    initialized = true;
+    if (process.env.GEMINI_API_KEY) {
+      genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    } else {
+      console.warn(
+        "[Gemini Provider] GEMINI_API_KEY not set. Gemini will be unavailable."
+      );
+    }
+  }
+  return genAI;
 }
 
 export async function callGemini(
@@ -20,10 +31,11 @@ export async function callGemini(
   temperature: number
 ): Promise<LLMResponse> {
   try {
-    if (!genAI) {
-      throw new Error('Gemini is not initialized (missing API Key)');
+    const client = getGeminiClient();
+    if (!client) {
+      throw new Error("Gemini is not initialized (missing API Key)");
     }
-    const geminiModel = genAI.getGenerativeModel({
+    const geminiModel = client.getGenerativeModel({
       model,
       generationConfig: {
         maxOutputTokens: maxTokens,
@@ -33,17 +45,17 @@ export async function callGemini(
 
     // Convert messages to Gemini format
     // Gemini expects alternating user/model messages
-    const systemMessage = messages.find(m => m.role === 'system');
-    const conversationMessages = messages.filter(m => m.role !== 'system');
+    const systemMessage = messages.find((m) => m.role === "system");
+    const conversationMessages = messages.filter((m) => m.role !== "system");
 
     // Combine system prompt with first user message if present
-    let prompt = '';
+    let prompt = "";
     if (systemMessage) {
       prompt = `${systemMessage.content}\n\n`;
     }
-    
+
     if (conversationMessages.length > 0) {
-      prompt += conversationMessages.map(m => m.content).join('\n\n');
+      prompt += conversationMessages.map((m) => m.content).join("\n\n");
     }
 
     const result = await geminiModel.generateContent(prompt);
@@ -61,7 +73,7 @@ export async function callGemini(
         : undefined,
     };
   } catch (error: any) {
-    console.error('[Gemini Provider] Error:', error.message);
+    console.error("[Gemini Provider] Error:", error.message);
     throw new Error(`Gemini API error: ${error.message}`);
   }
 }

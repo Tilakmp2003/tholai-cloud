@@ -1,22 +1,26 @@
-import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
+import { randomUUID } from "crypto";
 
 type RejectPayload = {
   taskId: string;
   reviewerAgentId: string; // QA or TL
-  failingFiles: string[];  // relative paths that failed QA
-  instruction?: string;    // optional clarifying instruction
+  failingFiles: string[]; // relative paths that failed QA
+  instruction?: string; // optional clarifying instruction
   escalateToAgentId?: string | null; // optional override to reassign to another agent
 };
 
 export async function handleQAReject(payload: RejectPayload) {
-  const { taskId, reviewerAgentId, failingFiles, instruction, escalateToAgentId } = payload;
+  const {
+    taskId,
+    reviewerAgentId,
+    failingFiles,
+    instruction,
+    escalateToAgentId,
+  } = payload;
   const traceId = randomUUID();
 
   // Load task and current assignment
-  const task = await prisma.task.findUnique({ where: { id: taskId }});
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task) throw new Error(`Task ${taskId} not found`);
 
   // Determine who to assign to: prefer original assigned agent
@@ -25,7 +29,9 @@ export async function handleQAReject(payload: RejectPayload) {
   // Create repair scope
   const repairScope = {
     files: failingFiles,
-    instruction: instruction ?? "Fix failing tests/issues in the listed files. Do not modify other files. Return only JSON with artifact updates and tests."
+    instruction:
+      instruction ??
+      "Fix failing tests/issues in the listed files. Do not modify other files. Return only JSON with artifact updates and tests.",
   };
 
   // Transaction: update task + create trace + traceStep
@@ -34,14 +40,14 @@ export async function handleQAReject(payload: RejectPayload) {
     await tx.task.update({
       where: { id: taskId },
       data: {
-        status: targetAgentId ? 'ASSIGNED' : 'NEEDS_REVISION', // Use NEEDS_REVISION if no agent
+        status: targetAgentId ? "ASSIGNED" : "NEEDS_REVISION", // Use NEEDS_REVISION if no agent
         failedFiles: failingFiles,
         repairScope,
         retryCount: { increment: 1 },
-        lastFailureReason: 'QA_REJECT',
+        lastFailureReason: "QA_REJECT",
         assignedToAgentId: targetAgentId,
-        traceId
-      }
+        traceId,
+      },
     });
 
     // Create trace event (for AgentOps)
@@ -54,19 +60,23 @@ export async function handleQAReject(payload: RejectPayload) {
         metadata: {
           failingFiles,
           targetAgentId,
-          instruction: repairScope.instruction
-        }
-      }
+          instruction: repairScope.instruction,
+        },
+      },
     });
 
     // If assigned back to agent, also mark agent BUSY and set currentTaskId
     if (targetAgentId) {
       await tx.agent.update({
         where: { id: targetAgentId },
-        data: { status: 'BUSY', currentTaskId: taskId }
+        data: { status: "BUSY", currentTaskId: taskId },
       });
     }
   });
 
-  console.log(`[QA] 🛑 Task ${taskId} rejected. Reassigned to ${targetAgentId} with scope: ${JSON.stringify(failingFiles)}`);
+  console.log(
+    `[QA] 🛑 Task ${taskId} rejected. Reassigned to ${targetAgentId} with scope: ${JSON.stringify(
+      failingFiles
+    )}`
+  );
 }

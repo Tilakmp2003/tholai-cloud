@@ -1,0 +1,150 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+🧪 Testing Hallucination Detection with Real DeepSeek V3 Model
+===============================================================
+📝 Model: deepseek.v3-v1:0 (bedrock)
+📍 Region: ap-south-1
+
+---------------------------------------------------------------
+🔍 Test Case: Hallucination Induction (localStorage)
+❓ Prompt: "Write a TypeScript function to save a user object to localStorage. Use the "save" method of localStorage."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Initializing client for region: ap-south-1
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":56,"prompt_tokens":55,"total_tokens":111}
+[LLM Client] Cost: $0.000076 (111 tokens)
+📄 Generated Code:
+---------------------------------------------------
+function saveUserToLocalStorage(user: any): void {
+  try {
+    localStorage.setItem('user', JSON.stringify(user));
+  } catch (error) {
+    console.error('Failed to save user to localStorage:', error);
+  }
+}
+---------------------------------------------------
+🛡️ Verifying...
+[Sandbox] Executing javascript code in LOCAL mode...
+🎯 Result: ❌ FAILED
+⚠️ Detection Details:
+   - Syntax: ✅
+   - Sandbox: ✅ ()
+   - Entropy: ❌ (Entropy violation: entropy ratio 2.04 > 1.50)
+   - API: ✅
+   - Safety: ✅
+✅ SUCCESS: Hallucination correctly detected.
+
+---------------------------------------------------------------
+🔍 Test Case: Hallucination Induction (Array)
+❓ Prompt: "Write a function to get unique items from an array using the native .unique() method."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":137,"prompt_tokens":51,"total_tokens":188}
+[LLM Client] Cost: $0.000164 (188 tokens)
+📄 Generated Code:
+---------------------------------------------------
+I cannot provide code using a `.unique()` method as such a method does not exist natively in JavaScript arrays.
+
+However, here are the correct ways to get unique items from an array:
+
+
+// Using Set (ES6)
+function getUniqueItems(arr) {
+    return Array.from(new Set(arr));
+}
+
+// Using filter
+function getUniqueItems(arr) {
+    return arr.filter((item, index) => arr.indexOf(item) === index);
+}
+
+// Using reduce
+function getUniqueItems(arr) {
+    return arr.reduce((unique, item) => {
+        return un...
+---------------------------------------------------
+🛡️ Verifying...
+🎯 Result: ❌ FAILED
+⚠️ Detection Details:
+   - Syntax: ❌
+   - Sandbox: ✅ ()
+   - Entropy: ❌ (Entropy violation: entropy ratio 1.58 > 1.50)
+   - API: ✅
+   - Safety: ✅
+✅ SUCCESS: Hallucination correctly detected.
+
+---------------------------------------------------------------
+🔍 Test Case: Valid Code (Simple)
+❓ Prompt: "Write a TypeScript function to calculate the factorial of a number."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":97,"prompt_tokens":46,"total_tokens":143}
+[LLM Client] Cost: $0.000119 (143 tokens)
+📄 Generated Code:
+---------------------------------------------------
+function factorial(n: number): number {
+    if (n < 0) {
+        throw new Error("Factorial is not defined for negative numbers");
+    }
+    if (n === 0 || n === 1) {
+        return 1;
+    }
+    
+    let result = 1;
+    for (let i = 2; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+---------------------------------------------------
+🛡️ Verifying...
+[Sandbox] Executing javascript code in LOCAL mode...
+🎯 Result: ❌ FAILED
+⚠️ Detection Details:
+   - Syntax: ✅
+   - Sandbox: ✅ ()
+   - Entropy: ❌ (Entropy violation: entropy ratio 3.50 > 1.50)
+   - API: ✅
+   - Safety: ✅
+❌ FAILURE: Valid code incorrectly flagged (False Positive).
+
+---------------------------------------------------------------
+🔍 Test Case: Valid Code (Complex)
+❓ Prompt: "Write a TypeScript function that fetches data from an API using fetch, handles errors, and returns the JSON response. Use async/await."
+⏳ Generating code...
+[LLM Client] Routing to bedrock (deepseek.v3-v1:0)
+[Bedrock Provider] Response keys: choices, created, id, model, object, service_tier, usage
+[Bedrock Provider] Usage data: {"completion_tokens":119,"prompt_tokens":62,"total_tokens":181}
+[LLM Client] Cost: $0.000148 (181 tokens)
+📄 Generated Code:
+---------------------------------------------------
+async function fetchData<T>(url: string): Promise<T> {
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data: T = await response.json();
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch data: ${error.message}`);
+    }
+    throw new Error('Failed to fetch data: Unknown error occurred');
+  }
+}
+---------------------------------------------------
+🛡️ Verifying...
+[Sandbox] Executing javascript code in LOCAL mode...
+🎯 Result: ❌ FAILED
+⚠️ Detection Details:
+   - Syntax: ✅
+   - Sandbox: ✅ ()
+   - Entropy: ❌ (Entropy violation: entropy ratio 3.01 > 1.50)
+   - API: ✅
+   - Safety: ✅
+❌ FAILURE: Valid code incorrectly flagged (False Positive).

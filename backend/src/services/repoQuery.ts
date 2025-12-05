@@ -1,10 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import { vectorDb } from './vectorDb';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
+import { vectorDb } from "./vectorDb";
 
 export class RepoQueryService {
-  
   /**
    * Fetch symbol details by name and projectId.
    * Useful for agents to find function definitions.
@@ -17,19 +14,21 @@ export class RepoQueryService {
     }
     const repoId = repo.id;
 
-    console.log(`[RepoQuery] Fetching symbol '${symbolName}' in repo '${repoId}' (Project: ${projectId})`);
-    
+    console.log(
+      `[RepoQuery] Fetching symbol '${symbolName}' in repo '${repoId}' (Project: ${projectId})`
+    );
+
     // Find symbol in DB
     const symbol = await prisma.symbol.findFirst({
       where: {
         repoId,
-        name: symbolName
+        name: symbolName,
       },
       include: {
-        file: true
-      }
+        file: true,
+      },
     });
-    console.log(`[RepoQuery] Found symbol:`, symbol ? symbol.name : 'NULL');
+    console.log(`[RepoQuery] Found symbol:`, symbol ? symbol.name : "NULL");
 
     if (!symbol) return null;
 
@@ -40,14 +39,14 @@ export class RepoQueryService {
         repoId,
         fileId: symbol.fileId,
         startLine: symbol.startLine,
-        endLine: symbol.endLine
-      }
+        endLine: symbol.endLine,
+      },
     });
 
     return {
       symbol,
       code: chunk?.text || null,
-      location: `${symbol.file.path}:${symbol.startLine}-${symbol.endLine}`
+      location: `${symbol.file.path}:${symbol.startLine}-${symbol.endLine}`,
     };
   }
 
@@ -61,30 +60,30 @@ export class RepoQueryService {
     const repoId = repo.id;
 
     console.log(`[RepoQuery] 🔍 RAG Query: "${query}" in ${repoId}`);
-    
+
     // TODO: Implement real vector search via vectorDb service
     // For now, we'll do a simple keyword search on FileChunk text
     // This is a "poor man's" RAG for MVP
-    
+
     const chunks = await prisma.fileChunk.findMany({
       where: {
         repoId,
         text: {
-          contains: query // Simple substring match
-        }
+          contains: query, // Simple substring match
+        },
       },
       take: limit,
       include: {
-        file: true
-      }
+        file: true,
+      },
     });
 
-    return chunks.map(chunk => ({
+    return chunks.map((chunk) => ({
       text: chunk.text,
       filePath: chunk.file.path,
       startLine: chunk.startLine,
       endLine: chunk.endLine,
-      score: 1.0 // Mock score
+      score: 1.0, // Mock score
     }));
   }
 }

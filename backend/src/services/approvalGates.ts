@@ -1,26 +1,24 @@
 /**
  * Human Approval Gates Service
- * 
+ *
  * Pauses agent work at critical points for human review.
  * Supports approval, rejection, and modification of agent outputs.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { emitLog } from '../websocket/socketServer';
-import { getIO } from '../websocket/socketServer';
+import { prisma } from "../lib/prisma";
+import { emitLog } from "../websocket/socketServer";
+import { getIO } from "../websocket/socketServer";
 
-const prisma = new PrismaClient();
+export type GateType =
+  | "PRE_COMMIT" // Before committing code to git
+  | "ARCHITECTURE" // Major architectural decisions
+  | "SECURITY" // Security-sensitive changes
+  | "DEPLOYMENT" // Before deployment
+  | "COST_THRESHOLD" // When cost exceeds threshold
+  | "TASK_COMPLETE" // After task completion (optional)
+  | "WAR_ROOM_EXIT"; // Before applying war room resolution
 
-export type GateType = 
-  | 'PRE_COMMIT'      // Before committing code to git
-  | 'ARCHITECTURE'    // Major architectural decisions
-  | 'SECURITY'        // Security-sensitive changes
-  | 'DEPLOYMENT'      // Before deployment
-  | 'COST_THRESHOLD'  // When cost exceeds threshold
-  | 'TASK_COMPLETE'   // After task completion (optional)
-  | 'WAR_ROOM_EXIT';  // Before applying war room resolution
-
-export type GateStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'MODIFIED';
+export type GateStatus = "PENDING" | "APPROVED" | "REJECTED" | "MODIFIED";
 
 export interface ApprovalGate {
   id: string;
@@ -30,8 +28,8 @@ export interface ApprovalGate {
   status: GateStatus;
   title: string;
   description: string;
-  payload: any;           // The content awaiting approval (code, config, etc.)
-  modifiedPayload?: any;  // Human-modified version
+  payload: any; // The content awaiting approval (code, config, etc.)
+  modifiedPayload?: any; // Human-modified version
   reviewerNotes?: string | undefined;
   createdAt: Date;
   resolvedAt?: Date;
@@ -49,14 +47,18 @@ const projectGateConfig = new Map<string, Set<GateType>>();
  */
 export function configureGates(projectId: string, enabledGates: GateType[]) {
   projectGateConfig.set(projectId, new Set(enabledGates));
-  emitLog(`[ApprovalGates] Configured gates for project ${projectId}: ${enabledGates.join(', ')}`);
+  emitLog(
+    `[ApprovalGates] Configured gates for project ${projectId}: ${enabledGates.join(
+      ", "
+    )}`
+  );
 }
 
 /**
  * Get default gates (can be overridden per project)
  */
 export function getDefaultGates(): GateType[] {
-  return ['PRE_COMMIT', 'ARCHITECTURE', 'SECURITY', 'WAR_ROOM_EXIT'];
+  return ["PRE_COMMIT", "ARCHITECTURE", "SECURITY", "WAR_ROOM_EXIT"];
 }
 
 /**
@@ -66,7 +68,9 @@ export function isGateEnabled(projectId: string, gateType: GateType): boolean {
   const config = projectGateConfig.get(projectId);
   if (!config) {
     // Default: enable critical gates
-    return ['PRE_COMMIT', 'SECURITY', 'WAR_ROOM_EXIT', 'ARCHITECTURE'].includes(gateType);
+    return ["PRE_COMMIT", "SECURITY", "WAR_ROOM_EXIT", "ARCHITECTURE"].includes(
+      gateType
+    );
   }
   return config.has(gateType);
 }
@@ -90,12 +94,12 @@ export async function createGate(
       projectId,
       taskId,
       gateType,
-      status: 'APPROVED',
+      status: "APPROVED",
       title,
       description,
       payload,
       createdAt: new Date(),
-      resolvedAt: new Date()
+      resolvedAt: new Date(),
     };
   }
 
@@ -104,25 +108,25 @@ export async function createGate(
     projectId,
     taskId,
     gateType,
-    status: 'PENDING',
+    status: "PENDING",
     title,
     description,
     payload,
-    createdAt: new Date()
+    createdAt: new Date(),
   };
 
   pendingGates.set(gate.id, gate);
-  
+
   // Emit to frontend
   try {
     const io = getIO();
-    io.emit('approval:pending', gate);
+    io.emit("approval:pending", gate);
   } catch (e) {
     // Socket not initialized (e.g. in tests), ignore
   }
-  
+
   emitLog(`[ApprovalGates] 🚦 Gate created: ${gateType} - ${title}`);
-  
+
   return gate;
 }
 
@@ -134,23 +138,23 @@ export async function waitForApproval(
   timeoutMs: number = 3600000 // 1 hour default
 ): Promise<ApprovalGate> {
   const startTime = Date.now();
-  
+
   return new Promise((resolve, reject) => {
     const checkInterval = setInterval(() => {
       const gate = pendingGates.get(gateId);
-      
+
       if (!gate) {
         clearInterval(checkInterval);
         reject(new Error(`Gate ${gateId} not found`));
         return;
       }
-      
-      if (gate.status !== 'PENDING') {
+
+      if (gate.status !== "PENDING") {
         clearInterval(checkInterval);
         resolve(gate);
         return;
       }
-      
+
       if (Date.now() - startTime > timeoutMs) {
         clearInterval(checkInterval);
         reject(new Error(`Gate ${gateId} timed out after ${timeoutMs}ms`));
@@ -172,24 +176,24 @@ export async function approveGate(
   if (!gate) {
     throw new Error(`Gate ${gateId} not found`);
   }
-  
-  gate.status = 'APPROVED';
+
+  gate.status = "APPROVED";
   gate.resolvedAt = new Date();
   gate.resolvedBy = reviewerId;
   gate.reviewerNotes = notes;
-  
+
   pendingGates.set(gateId, gate);
-  
+
   // Emit to frontend
   try {
     const io = getIO();
-    io.emit('approval:resolved', gate);
+    io.emit("approval:resolved", gate);
   } catch (e) {
     // Socket not initialized (e.g. in tests), ignore
   }
-  
+
   emitLog(`[ApprovalGates] ✅ Gate approved: ${gate.title}`);
-  
+
   return gate;
 }
 
@@ -205,24 +209,24 @@ export async function rejectGate(
   if (!gate) {
     throw new Error(`Gate ${gateId} not found`);
   }
-  
-  gate.status = 'REJECTED';
+
+  gate.status = "REJECTED";
   gate.resolvedAt = new Date();
   gate.resolvedBy = reviewerId;
   gate.reviewerNotes = reason;
-  
+
   pendingGates.set(gateId, gate);
-  
+
   // Emit to frontend
   try {
     const io = getIO();
-    io.emit('approval:resolved', gate);
+    io.emit("approval:resolved", gate);
   } catch (e) {
     // Socket not initialized (e.g. in tests), ignore
   }
-  
+
   emitLog(`[ApprovalGates] ❌ Gate rejected: ${gate.title} - ${reason}`);
-  
+
   return gate;
 }
 
@@ -239,25 +243,25 @@ export async function modifyAndApprove(
   if (!gate) {
     throw new Error(`Gate ${gateId} not found`);
   }
-  
-  gate.status = 'MODIFIED';
+
+  gate.status = "MODIFIED";
   gate.modifiedPayload = modifiedPayload;
   gate.resolvedAt = new Date();
   gate.resolvedBy = reviewerId;
   gate.reviewerNotes = notes;
-  
+
   pendingGates.set(gateId, gate);
-  
+
   // Emit to frontend
   try {
     const io = getIO();
-    io.emit('approval:resolved', gate);
+    io.emit("approval:resolved", gate);
   } catch (e) {
     // Socket not initialized (e.g. in tests), ignore
   }
-  
+
   emitLog(`[ApprovalGates] ✏️ Gate modified & approved: ${gate.title}`);
-  
+
   return gate;
 }
 
@@ -267,9 +271,11 @@ export async function modifyAndApprove(
 export function getPendingGates(projectId?: string): ApprovalGate[] {
   const gates = Array.from(pendingGates.values());
   if (projectId) {
-    return gates.filter(g => g.projectId === projectId && g.status === 'PENDING');
+    return gates.filter(
+      (g) => g.projectId === projectId && g.status === "PENDING"
+    );
   }
-  return gates.filter(g => g.status === 'PENDING');
+  return gates.filter((g) => g.status === "PENDING");
 }
 
 /**
@@ -289,7 +295,7 @@ export async function createPreCommitGate(
 ): Promise<ApprovalGate> {
   return createGate(
     projectId,
-    'PRE_COMMIT',
+    "PRE_COMMIT",
     `Code Review: ${files.length} file(s)`,
     `Review code changes before committing to repository`,
     { files },
@@ -308,7 +314,7 @@ export async function createArchitectureGate(
 ): Promise<ApprovalGate> {
   return createGate(
     projectId,
-    'ARCHITECTURE',
+    "ARCHITECTURE",
     `Architecture Decision: ${decision}`,
     `Review architectural decision before proceeding`,
     { decision, options, recommendation }
@@ -326,7 +332,7 @@ export async function createCostGate(
 ): Promise<ApprovalGate> {
   return createGate(
     projectId,
-    'COST_THRESHOLD',
+    "COST_THRESHOLD",
     `Cost Alert: $${currentCost.toFixed(2)} / $${threshold.toFixed(2)}`,
     `Project cost has exceeded threshold. Approve to continue.`,
     { currentCost, threshold, projectedCost }
@@ -346,5 +352,5 @@ export const approvalGates = {
   getGate,
   createPreCommitGate,
   createArchitectureGate,
-  createCostGate
+  createCostGate,
 };

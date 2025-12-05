@@ -1,11 +1,9 @@
 import { invokeModel, ModelConfig } from "../services/llmClient";
 import { queryVectorDB } from "../services/ragService";
 import { checkBudget } from "../services/preflightService";
-import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { emitTaskUpdate, emitAgentUpdate } from "../websocket/socketServer";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 const SYSTEM_PROMPT = `
 You are a World-Class Product Designer and Creative Director (ex-Apple, ex-Airbnb).
@@ -122,7 +120,7 @@ export async function runDesignerAgentOnce() {
   // 1. Find a task assigned to DESIGNER or a generic 'design' task
   const tasks = await prisma.task.findMany({
     where: {
-      requiredRole: "DESIGNER",
+      requiredRole: { in: ["DESIGNER", "Designer", "designer"] },
       status: { in: ["QUEUED", "ASSIGNED"] },
       assignedToAgentId: null,
     },
@@ -148,7 +146,7 @@ export async function runDesignerAgentOnce() {
 
   // 2. Find the Designer Agent (Seeded)
   const agent = await prisma.agent.findFirst({
-    where: { role: "Designer" },
+    where: { role: { in: ["Designer", "DESIGNER", "designer"] } },
   });
 
   if (!agent) {

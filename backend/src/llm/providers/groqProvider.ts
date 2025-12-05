@@ -3,18 +3,28 @@
  * Ultra-fast inference for execution tasks
  */
 
-import OpenAI from 'openai';
-import { LLMMessage, LLMResponse } from '../types';
+import OpenAI from "openai";
+import { LLMMessage, LLMResponse } from "../types";
 
+// Lazy initialization to allow dotenv to load first
 let groq: OpenAI | null = null;
+let initialized = false;
 
-if (process.env.GROQ_API_KEY) {
-  groq = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-  });
-} else {
-  console.warn('[Groq Provider] GROQ_API_KEY not set. Groq will be unavailable.');
+function getGroqClient(): OpenAI | null {
+  if (!initialized) {
+    initialized = true;
+    if (process.env.GROQ_API_KEY) {
+      groq = new OpenAI({
+        apiKey: process.env.GROQ_API_KEY,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
+    } else {
+      console.warn(
+        "[Groq Provider] GROQ_API_KEY not set. Groq will be unavailable."
+      );
+    }
+  }
+  return groq;
 }
 
 export async function callGroq(
@@ -24,12 +34,13 @@ export async function callGroq(
   temperature: number
 ): Promise<LLMResponse> {
   try {
-    if (!groq) {
-      throw new Error('Groq is not initialized (missing API Key)');
+    const client = getGroqClient();
+    if (!client) {
+      throw new Error("Groq is not initialized (missing API Key)");
     }
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model,
-      messages: messages.map(m => ({
+      messages: messages.map((m) => ({
         role: m.role,
         content: m.content,
       })),
@@ -39,7 +50,7 @@ export async function callGroq(
 
     const choice = completion.choices[0];
     if (!choice || !choice.message?.content) {
-      throw new Error('Groq returned empty response');
+      throw new Error("Groq returned empty response");
     }
 
     return {
@@ -53,7 +64,7 @@ export async function callGroq(
         : undefined,
     };
   } catch (error: any) {
-    console.error('[Groq Provider] Error:', error.message);
+    console.error("[Groq Provider] Error:", error.message);
     throw new Error(`Groq API error: ${error.message}`);
   }
 }

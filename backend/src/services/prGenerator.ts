@@ -1,6 +1,6 @@
 /**
  * PR Generator Service
- * 
+ *
  * Generates pull request descriptions with:
  * - Trace links
  * - Patch summary
@@ -9,11 +9,9 @@
  * - Auto-labels
  */
 
-import { PrismaClient } from '@prisma/client';
-import { invokeModel, ModelConfig } from './llmClient';
-import { emitLog } from '../websocket/socketServer';
-
-const prisma =new PrismaClient();
+import { prisma } from "../lib/prisma";
+import { invokeModel, ModelConfig } from "./llmClient";
+import { emitLog } from "../websocket/socketServer";
 
 export interface PRMetadata {
   taskId: string;
@@ -40,69 +38,72 @@ export interface GeneratedPR {
  */
 export function calculateConfidence(metadata: PRMetadata): number {
   let confidence = 0.5; // Base confidence
-  
+
   // Test pass rate (0-30%)
   if (metadata.testsRun > 0) {
     const passRate = metadata.testsPassed / metadata.testsRun;
     confidence += passRate * 0.3;
   }
-  
+
   // Agent role bonus (senior agents = higher confidence)
   const roleBonus: Record<string, number> = {
-    'Architect': 0.15,
-    'SeniorDev': 0.12,
-    'MidDev': 0.08,
-    'JuniorDev': 0.05
+    Architect: 0.15,
+    SeniorDev: 0.12,
+    MidDev: 0.08,
+    JuniorDev: 0.05,
   };
   confidence += roleBonus[metadata.agentRole] || 0.05;
-  
+
   // File count penalty (more files = lower confidence)
   const filePenalty = Math.min(0.1, metadata.filesChanged.length * 0.02);
   confidence -= filePenalty;
-  
+
   return Math.min(0.99, Math.max(0.1, confidence));
 }
 
 /**
  * Generate PR labels based on metadata
  */
-export function generateLabels(metadata: PRMetadata, confidence: number): string[] {
-  const labels: string[] = ['auto-generated', 'requires-review'];
-  
+export function generateLabels(
+  metadata: PRMetadata,
+  confidence: number
+): string[] {
+  const labels: string[] = ["auto-generated", "requires-review"];
+
   // Confidence label
   if (confidence >= 0.9) {
-    labels.push('confidence:high');
+    labels.push("confidence:high");
   } else if (confidence >= 0.7) {
-    labels.push('confidence:medium');
+    labels.push("confidence:medium");
   } else {
-    labels.push('confidence:low');
+    labels.push("confidence:low");
   }
-  
+
   // Size labels
   if (metadata.filesChanged.length === 1) {
-    labels.push('size:xs');
+    labels.push("size:xs");
   } else if (metadata.filesChanged.length <= 3) {
-    labels.push('size:s');
+    labels.push("size:s");
   } else if (metadata.filesChanged.length <= 7) {
-    labels.push('size:m');
+    labels.push("size:m");
   } else {
-    labels.push('size:l');
+    labels.push("size:l");
   }
-  
+
   // Test labels
   if (metadata.testsRun > 0) {
     if (metadata.testsPassed === metadata.testsRun) {
-      labels.push('tests:passing');
+      labels.push("tests:passing");
     } else {
-      labels.push('tests:failing');
+      labels.push("tests:failing");
     }
   } else {
-    labels.push('tests:none');
+    labels.push("tests:none");
   }
-  
+
   // Agent label
   labels.push(`agent:${metadata.agentRole.toLowerCase()}`);
-  
+
   return labels;
 }
 
@@ -115,15 +116,23 @@ async function generateExplanation(
   traceId?: string
 ): Promise<string> {
   try {
-    const agentRecord = await prisma.agent.findFirst({ where: { role: 'MidDev' } });
+    const agentRecord = await prisma.agent.findFirst({
+      where: { role: "MidDev" },
+    });
     if (!agentRecord || !agentRecord.modelConfig) {
       return `Implements: ${taskTitle}`;
     }
     const config = (agentRecord.modelConfig as any).primary as ModelConfig;
 
-    const prompt = `Task: ${taskTitle}\nFiles changed: ${filesChanged.join(', ')}\n\nExplain why this change was made in 1-2 sentences.`;
-    const response = await invokeModel(config, 'You are a technical writer. Write a 1-2 sentence explanation of why this code change was made. Be concise and specific.', prompt);
-    
+    const prompt = `Task: ${taskTitle}\nFiles changed: ${filesChanged.join(
+      ", "
+    )}\n\nExplain why this change was made in 1-2 sentences.`;
+    const response = await invokeModel(
+      config,
+      "You are a technical writer. Write a 1-2 sentence explanation of why this code change was made. Be concise and specific.",
+      prompt
+    );
+
     return response.text.trim();
   } catch (error) {
     return `Implements: ${taskTitle}`;
@@ -133,7 +142,9 @@ async function generateExplanation(
 /**
  * Generate full PR description
  */
-export async function generatePRDescription(metadata: PRMetadata): Promise<GeneratedPR> {
+export async function generatePRDescription(
+  metadata: PRMetadata
+): Promise<GeneratedPR> {
   const confidence = calculateConfidence(metadata);
   const labels = generateLabels(metadata, confidence);
   const explanation = await generateExplanation(
@@ -141,15 +152,15 @@ export async function generatePRDescription(metadata: PRMetadata): Promise<Gener
     metadata.filesChanged,
     metadata.traceId
   );
-  
+
   // Fetch task details
   const task = await prisma.task.findUnique({
     where: { id: metadata.taskId },
-    include: { module: true }
+    include: { module: true },
   });
-  
-  const title = `🤖 ${task?.title || 'Auto-generated changes'}`;
-  
+
+  const title = `🤖 ${task?.title || "Auto-generated changes"}`;
+
   const body = `## Summary
 
 ${explanation}
@@ -166,19 +177,23 @@ ${explanation}
 
 ## Files Changed
 
-${metadata.filesChanged.map(f => `- \`${f}\``).join('\n')}
+${metadata.filesChanged.map((f) => `- \`${f}\``).join("\n")}
 
 ## Test Results
 
-${metadata.testsRun > 0 
-  ? `✅ ${metadata.testsPassed}/${metadata.testsRun} tests passing`
-  : '⚠️ No tests run'}
+${
+  metadata.testsRun > 0
+    ? `✅ ${metadata.testsPassed}/${metadata.testsRun} tests passing`
+    : "⚠️ No tests run"
+}
 
 ## Trace
 
-${metadata.traceId 
-  ? `[View execution trace](./traces/${metadata.traceId})`
-  : 'No trace available'}
+${
+  metadata.traceId
+    ? `[View execution trace](./traces/${metadata.traceId})`
+    : "No trace available"
+}
 
 ---
 
@@ -187,63 +202,70 @@ ${metadata.traceId
 
 This PR was automatically generated by the Virtual Software Company platform.
 - **Confidence Score**: ${(confidence * 100).toFixed(0)}%
-- **Auto-merge eligible**: ${confidence >= 0.9 ? 'Yes' : 'No'}
+- **Auto-merge eligible**: ${confidence >= 0.9 ? "Yes" : "No"}
 
 Please review carefully before merging.
 
 </details>`;
 
-  const autoMergeEligible = confidence >= 0.9 && 
-    metadata.testsPassed === metadata.testsRun && 
+  const autoMergeEligible =
+    confidence >= 0.9 &&
+    metadata.testsPassed === metadata.testsRun &&
     metadata.testsRun > 0;
 
-  emitLog(`[PRGenerator] 📝 Generated PR: ${title} (confidence: ${(confidence * 100).toFixed(0)}%)`);
+  emitLog(
+    `[PRGenerator] 📝 Generated PR: ${title} (confidence: ${(
+      confidence * 100
+    ).toFixed(0)}%)`
+  );
 
   return {
     title,
     body,
     labels,
     confidence,
-    autoMergeEligible
+    autoMergeEligible,
   };
 }
 
 /**
  * Generate PR for a completed task
  */
-export async function generatePRForTask(taskId: string): Promise<GeneratedPR | null> {
+export async function generatePRForTask(
+  taskId: string
+): Promise<GeneratedPR | null> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: {
       module: {
-        include: { project: true }
+        include: { project: true },
       },
-      assignedToAgent: true
-    }
+      assignedToAgent: true,
+    },
   });
-  
+
   if (!task || !task.module) {
     return null;
   }
-  
+
   // Get files from task result
   const result = task.result as any;
-  const filesChanged = result?.targetFile 
+  const filesChanged = result?.targetFile
     ? [result.targetFile]
     : (task.files as any)?.map((f: any) => f.path) || [];
-  
+
   const metadata: PRMetadata = {
     taskId: task.id,
     projectId: task.module.projectId,
     moduleName: task.module.name,
-    agentRole: task.assignedToAgent?.role || 'Unknown',
+    agentRole: task.assignedToAgent?.role || "Unknown",
     confidence: 0,
     filesChanged,
     testsRun: 0, // Would come from test results
     testsPassed: 0,
-    traceId: task.traceId || undefined
+    traceId: task.traceId || undefined,
   };
-  
+
   return generatePRDescription(metadata);
 }
 
@@ -251,5 +273,5 @@ export const prGenerator = {
   calculateConfidence,
   generateLabels,
   generatePRDescription,
-  generatePRForTask
+  generatePRForTask,
 };

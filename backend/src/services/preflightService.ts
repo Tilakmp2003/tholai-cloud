@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-import { ModelConfig } from './llmClient';
+import { prisma } from "../lib/prisma";
+import { ModelConfig } from "./llmClient";
 
 export interface PreflightResult {
   allowed: boolean;
@@ -15,7 +13,7 @@ export async function checkBudget(
 ): Promise<PreflightResult> {
   try {
     const agent = await prisma.agent.findUnique({
-      where: { id: agentId }
+      where: { id: agentId },
     });
 
     if (!agent) {
@@ -29,7 +27,9 @@ export async function checkBudget(
     if (estimatedCost > limitPerTask) {
       return {
         allowed: false,
-        reason: `Estimated cost ($${estimatedCost.toFixed(4)}) exceeds agent limit per task ($${limitPerTask})`
+        reason: `Estimated cost ($${estimatedCost.toFixed(
+          4
+        )}) exceeds agent limit per task ($${limitPerTask})`,
       };
     }
 
@@ -38,7 +38,6 @@ export async function checkBudget(
     // if (dailyCost + estimatedCost > DAILY_LIMIT) ...
 
     return { allowed: true };
-
   } catch (error) {
     console.error("[Preflight] Error checking budget:", error);
     // Fail safe: block if error

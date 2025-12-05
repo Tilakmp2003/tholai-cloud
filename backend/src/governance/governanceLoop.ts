@@ -1,15 +1,17 @@
 // @ts-nocheck
 /**
  * Phase 4: Governance Loop (HeadAgent)
- * 
+ *
  * Main orchestrator for agent performance evaluation and governance
  */
 
-import { PrismaClient, Agent, AgentRiskLevel } from "@prisma/client";
+import { Agent, AgentRiskLevel } from "@prisma/client";
+import { prisma } from "../lib/prisma";
 import { computeAgentScore, assignRiskLevel } from "./scoringUtils";
-import { evaluateGovernanceAction, applyGovernanceDecision } from "./governanceRules";
-
-const prisma = new PrismaClient();
+import {
+  evaluateGovernanceAction,
+  applyGovernanceDecision,
+} from "./governanceRules";
 
 const MIN_TASKS_FOR_EVAL = 3;
 
@@ -24,10 +26,10 @@ export async function runGovernanceLoopOnce() {
     const agents = await prisma.agent.findMany({
       include: {
         performanceLogs: {
-          orderBy: { createdAt: 'desc' },
-          take: 20 // Only look at recent performance
-        }
-      }
+          orderBy: { createdAt: "desc" },
+          take: 20, // Only look at recent performance
+        },
+      },
     });
 
     for (const agent of agents) {
@@ -52,7 +54,9 @@ async function evaluateAgent(agent: any) {
 
   // Skip if not enough data
   if (logs.length < MIN_TASKS_FOR_EVAL) {
-    console.log(`[HeadAgent] Skipping agent ${agent.id} - insufficient data (${logs.length} tasks)`);
+    console.log(
+      `[HeadAgent] Skipping agent ${agent.id} - insufficient data (${logs.length} tasks)`
+    );
     return;
   }
 
@@ -72,17 +76,19 @@ async function evaluateAgent(agent: any) {
       score: scoreBreakdown.totalScore,
       riskLevel: riskLevel as AgentRiskLevel,
       successCount,
-      failCount
-    }
+      failCount,
+    },
   });
 
   const successRate = successCount / tasksHandled;
 
   console.log(
     `[HeadAgent] Evaluated ${agent.role} ${agent.id.substring(0, 8)}... → ` +
-    `score=${scoreBreakdown.totalScore.toFixed(1)}, ` +
-    `risk=${riskLevel}, ` +
-    `success=${(successRate * 100).toFixed(1)}% (${successCount}/${tasksHandled})`
+      `score=${scoreBreakdown.totalScore.toFixed(1)}, ` +
+      `risk=${riskLevel}, ` +
+      `success=${(successRate * 100).toFixed(
+        1
+      )}% (${successCount}/${tasksHandled})`
   );
 
   // 4. Determine governance action
@@ -97,21 +103,25 @@ async function evaluateAgent(agent: any) {
     // Claim 2: Pass cost data
     costBaseline: updatedAgent.costBaseline,
     sessionCost: updatedAgent.sessionCost,
-    currentTaskComplexity: agent.currentTask?.complexityScore ?? 50 // Default to 50
+    currentTaskComplexity: agent.currentTask?.complexityScore ?? 50, // Default to 50
   });
 
   // 5. Apply the decision
-  if (decision.action !== 'NONE') {
+  if (decision.action !== "NONE") {
     await applyGovernanceDecision(updatedAgent.id, decision);
-    
+
     // Log detailed breakdown for significant actions
-    if (decision.action === 'PROMOTE' || decision.action === 'DEMOTE' || decision.action === 'TERMINATE') {
+    if (
+      decision.action === "PROMOTE" ||
+      decision.action === "DEMOTE" ||
+      decision.action === "TERMINATE"
+    ) {
       console.log(`[HeadAgent] Score breakdown for ${agent.id}:`, {
         successRate: `${(scoreBreakdown.successRate * 100).toFixed(1)}%`,
         efficiency: scoreBreakdown.efficiencyScore.toFixed(2),
         quality: scoreBreakdown.qualityScore.toFixed(2),
         consistency: scoreBreakdown.consistencyScore.toFixed(2),
-        riskPenalty: scoreBreakdown.riskPenalty.toFixed(2)
+        riskPenalty: scoreBreakdown.riskPenalty.toFixed(2),
       });
     }
   }

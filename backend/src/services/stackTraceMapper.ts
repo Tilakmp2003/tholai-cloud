@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import path from 'path';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
+import path from "path";
 
 export interface StackFrame {
   functionName: string | null;
@@ -11,12 +9,11 @@ export interface StackFrame {
 }
 
 export class StackTraceMapper {
-  
   /**
    * Parse a stack trace string into structured frames.
    */
   parse(stackTrace: string): StackFrame[] {
-    const lines = stackTrace.split('\n');
+    const lines = stackTrace.split("\n");
     const frames: StackFrame[] = [];
 
     // Regex for "at Function (File:Line:Col)" or "at File:Line:Col"
@@ -27,7 +24,7 @@ export class StackTraceMapper {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed.startsWith('at ')) continue;
+      if (!trimmed.startsWith("at ")) continue;
 
       let match = trimmed.match(re1);
       if (match) {
@@ -35,7 +32,7 @@ export class StackTraceMapper {
           functionName: match[1],
           filePath: match[2],
           lineNumber: parseInt(match[3]),
-          columnNumber: parseInt(match[4])
+          columnNumber: parseInt(match[4]),
         });
         continue;
       }
@@ -46,7 +43,7 @@ export class StackTraceMapper {
           functionName: null,
           filePath: match[1],
           lineNumber: parseInt(match[2]),
-          columnNumber: parseInt(match[3])
+          columnNumber: parseInt(match[3]),
         });
       }
     }
@@ -67,26 +64,26 @@ export class StackTraceMapper {
 
     // Try to map the top frame
     const topFrame = frames[0];
-    
+
     // Normalize path: remove workspace root if present
     // We assume the indexed paths are relative.
     // We need to match the end of the path.
-    
+
     // Find file in DB that ends with the frame path
     // This is tricky because frame path is absolute.
     // We'll try to match by filename first.
     const filename = path.basename(topFrame.filePath);
-    
+
     const candidates = await prisma.repoFile.findMany({
       where: {
         repoId,
         path: {
-          endsWith: filename
-        }
+          endsWith: filename,
+        },
       },
       include: {
-        symbols: true
-      }
+        symbols: true,
+      },
     });
 
     // Find the exact file match (if multiple files have same name)
@@ -96,14 +93,15 @@ export class StackTraceMapper {
     if (!file) return null;
 
     // Find symbol containing the line number
-    const symbol = file.symbols.find(s => 
-      s.startLine <= topFrame.lineNumber && s.endLine >= topFrame.lineNumber
+    const symbol = file.symbols.find(
+      (s) =>
+        s.startLine <= topFrame.lineNumber && s.endLine >= topFrame.lineNumber
     );
 
     return {
       frame: topFrame,
       file: file.path,
-      symbol: symbol || null
+      symbol: symbol || null,
     };
   }
 }

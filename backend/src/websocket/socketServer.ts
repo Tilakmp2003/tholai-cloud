@@ -3,97 +3,103 @@
  * Real-time event broadcasting for dashboard updates
  */
 
-import { Server as SocketIOServer } from 'socket.io';
-import { Server as HTTPServer } from 'http';
-import { terminalService } from '../services/terminalService';
+import { Server as SocketIOServer } from "socket.io";
+import { Server as HTTPServer } from "http";
+import { terminalService } from "../services/terminalService";
 
 let io: SocketIOServer | null = null;
 
 export function initializeWebSocket(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
-    transports: ['polling'], // Force polling for App Runner compatibility
+    transports: ["polling"], // Force polling for App Runner compatibility
     cors: {
       origin: [
-        'https://main.d1xncmoa82vznf.amplifyapp.com',
-        'http://localhost:3000',
-        'http://localhost:3001'
+        "https://main.d1xncmoa82vznf.amplifyapp.com",
+        "http://localhost:3000",
+        "http://localhost:3001",
       ],
-      methods: ['GET', 'POST'],
-      credentials: true
-    }
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
   });
 
-  io.on('connection', (socket) => {
+  io.on("connection", (socket) => {
     console.log(`[WebSocket] Client connected: ${socket.id}`);
 
     // Send history
-    socket.emit('logs:history', logHistory);
+    socket.emit("logs:history", logHistory);
 
     // Terminal events
-    socket.on('terminal:create', async ({ sessionId, projectId }) => {
-      console.log(`[WebSocket] Creating terminal session: ${sessionId} for project: ${projectId}`);
-      
+    socket.on("terminal:create", async ({ sessionId, projectId }) => {
+      console.log(
+        `[WebSocket] Creating terminal session: ${sessionId} for project: ${projectId}`
+      );
+
       try {
         // If session already exists, destroy it first to ensure fresh start
         if (terminalService.hasSession(sessionId)) {
-          console.log(`[WebSocket] Session ${sessionId} already exists, destroying it first`);
+          console.log(
+            `[WebSocket] Session ${sessionId} already exists, destroying it first`
+          );
           terminalService.destroySession(sessionId);
           // Wait a moment for PTY to fully terminate
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
         }
-        
+
         await terminalService.createSession(sessionId, projectId, (data) => {
           // Stream terminal output to client
-          socket.emit('terminal:output', { sessionId, data });
+          socket.emit("terminal:output", { sessionId, data });
         });
-        
-        socket.emit('terminal:created', { sessionId, projectId });
+
+        socket.emit("terminal:created", { sessionId, projectId });
       } catch (err: any) {
-        console.error('[WebSocket] Terminal creation failed:', err);
-        socket.emit('terminal:error', { sessionId, error: err.message });
+        console.error("[WebSocket] Terminal creation failed:", err);
+        socket.emit("terminal:error", { sessionId, error: err.message });
       }
     });
 
-    socket.on('terminal:input', ({ sessionId, data }) => {
+    socket.on("terminal:input", ({ sessionId, data }) => {
       try {
         terminalService.write(sessionId, data);
       } catch (err: any) {
-        console.error('[WebSocket] Terminal write failed:', err);
-        socket.emit('terminal:error', { sessionId, error: err.message });
+        console.error("[WebSocket] Terminal write failed:", err);
+        socket.emit("terminal:error", { sessionId, error: err.message });
       }
     });
 
-    socket.on('terminal:resize', ({ sessionId, cols, rows }) => {
+    socket.on("terminal:resize", ({ sessionId, cols, rows }) => {
       try {
         terminalService.resize(sessionId, cols, rows);
       } catch (err: any) {
-        console.error('[WebSocket] Terminal resize failed:', err);
+        console.error("[WebSocket] Terminal resize failed:", err);
       }
     });
 
-    socket.on('terminal:destroy', ({ sessionId }) => {
+    socket.on("terminal:destroy", ({ sessionId }) => {
       try {
         terminalService.destroySession(sessionId);
-        socket.emit('terminal:destroyed', { sessionId });
+        socket.emit("terminal:destroyed", { sessionId });
       } catch (err: any) {
-        console.error('[WebSocket] Terminal destroy failed:', err);
+        console.error("[WebSocket] Terminal destroy failed:", err);
       }
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       console.log(`[WebSocket] Client disconnected: ${socket.id}`);
       // Note: In production, track which terminals belong to which socket
       // and clean them up on disconnect
     });
   });
 
-  console.log('[WebSocket] Server initialized');
+  console.log("[WebSocket] Server initialized");
   return io;
 }
 
 export function getIO(): SocketIOServer {
   if (!io) {
-    throw new Error('WebSocket not initialized. Call initializeWebSocket first.');
+    throw new Error(
+      "WebSocket not initialized. Call initializeWebSocket first."
+    );
   }
   return io;
 }
@@ -101,25 +107,58 @@ export function getIO(): SocketIOServer {
 // Event emitters
 export const emitTaskUpdate = (task: any) => {
   if (io) {
-    io.emit('task:update', task);
+    io.emit("task:update", task);
   }
 };
 
 export const emitTaskCreated = (task: any) => {
   if (io) {
-    io.emit('task:created', task);
+    io.emit("task:created", task);
   }
 };
 
 export const emitAgentUpdate = (agent: any) => {
   if (io) {
-    io.emit('agent:update', agent);
+    io.emit("agent:update", agent);
   }
 };
 
 export const emitGovernanceEvent = (event: any) => {
   if (io) {
-    io.emit('governance:event', event);
+    io.emit("governance:event", event);
+  }
+};
+
+export const emitPipelineProgress = (progress: {
+  agentId: string;
+  taskId: string;
+  status: string;
+  progress: number; // 0-100
+  message: string;
+}) => {
+  if (io) {
+    io.emit("pipeline:progress", progress);
+  }
+};
+
+export const emitTeamProgress = (summary: any) => {
+  if (io) {
+    io.emit("team:progress", summary);
+  }
+};
+
+// Emit when a new project is created
+export const emitProjectCreated = (project: any) => {
+  if (io) {
+    console.log(`[WebSocket] Broadcasting project:created for ${project.id}`);
+    io.emit("project:created", project);
+  }
+};
+
+// Emit when project status changes
+export const emitProjectUpdate = (project: any) => {
+  if (io) {
+    io.emit("project:update", project);
   }
 };
 
@@ -128,7 +167,7 @@ const logHistory: string[] = [];
 
 export const emitModuleUpdate = (module: any) => {
   if (io) {
-    io.emit('module:update', module);
+    io.emit("module:update", module);
   }
 };
 
@@ -140,7 +179,7 @@ export const emitLog = (log: string) => {
   }
 
   if (io) {
-    io.emit('log:new', log);
+    io.emit("log:new", log);
   }
 };
 

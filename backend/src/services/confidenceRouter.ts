@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 interface BugReport {
   bugId: string;
@@ -21,7 +19,9 @@ export const confidenceRouter = {
     confidence: number;
     suggestedPatch: string;
   }) {
-    console.log(`[Router] Routing Bug ${report.bugId} (Confidence: ${report.confidence})`);
+    console.log(
+      `[Router] Routing Bug ${report.bugId} (Confidence: ${report.confidence})`
+    );
 
     // 1. High Confidence (> 0.9) -> Auto-Verify
     if (report.confidence > 0.9) {
@@ -29,13 +29,13 @@ export const confidenceRouter = {
       await prisma.task.update({
         where: { id: report.taskId },
         data: {
-          status: 'PENDING_TESTS', // Mapped from AUTO_VERIFY_PENDING
-          assignedToAgentId: 'qa_auto_fixer',
+          status: "PENDING_TESTS", // Mapped from AUTO_VERIFY_PENDING
+          assignedToAgentId: "qa_auto_fixer",
           contextPacket: {
             patch: report.suggestedPatch,
-            instruction: "Apply patch and run verification tests immediately."
-          }
-        }
+            instruction: "Apply patch and run verification tests immediately.",
+          },
+        },
       });
       return;
     }
@@ -46,13 +46,14 @@ export const confidenceRouter = {
       await prisma.task.update({
         where: { id: report.taskId },
         data: {
-          status: 'IN_REVIEW', // Mapped from TEAM_LEAD_REVIEW
-          assignedToAgentId: 'team_lead',
+          status: "IN_REVIEW", // Mapped from TEAM_LEAD_REVIEW
+          assignedToAgentId: "team_lead",
           contextPacket: {
             patch: report.suggestedPatch,
-            instruction: "Review this proposed patch. It has medium confidence."
-          }
-        }
+            instruction:
+              "Review this proposed patch. It has medium confidence.",
+          },
+        },
       });
       return;
     }
@@ -62,14 +63,14 @@ export const confidenceRouter = {
     await prisma.task.update({
       where: { id: report.taskId },
       data: {
-        status: 'WAR_ROOM',
+        status: "WAR_ROOM",
         assignedToAgentId: null, // Broadcast to all
         isDeadlocked: true,
         contextPacket: {
           error: "Complex bug with low confidence fix.",
-          instruction: "Collaborative debugging required."
-        }
-      }
+          instruction: "Collaborative debugging required.",
+        },
+      },
     });
-  }
+  },
 };

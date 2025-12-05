@@ -1,7 +1,6 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma";
 
-const prisma = new PrismaClient();
 export const contextRequestRouter = Router();
 
 /**
@@ -27,7 +26,6 @@ contextRequestRouter.post("/", async (req, res) => {
   }
 });
 
-
 /**
  * GET /api/context-request
  * TeamLead sees all active/unresolved escalations
@@ -41,7 +39,7 @@ contextRequestRouter.get("/", async (req, res) => {
         fromAgent: true,
         toAgent: true,
       },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "asc" },
     });
 
     res.json(requests);
@@ -50,7 +48,6 @@ contextRequestRouter.get("/", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 /**
  * PUT /api/context-request/:id/resolve
@@ -70,7 +67,7 @@ contextRequestRouter.put("/:id/resolve", async (req, res) => {
       data: {
         resolution,
         status: "RESOLVED",
-        resolvedAt: new Date()
+        resolvedAt: new Date(),
       },
     });
 
