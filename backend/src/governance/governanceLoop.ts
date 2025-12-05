@@ -12,6 +12,7 @@ import {
   evaluateGovernanceAction,
   applyGovernanceDecision,
 } from "./governanceRules";
+import { evolutionCycleService } from "../services/evolution/EvolutionCycleService";
 
 const MIN_TASKS_FOR_EVAL = 3;
 
@@ -22,6 +23,7 @@ export async function runGovernanceLoopOnce() {
   console.log("[HeadAgent] Governance loop started...");
 
   try {
+    // 1. Run Standard Governance (Risk/Score)
     // Load all agents with their performance logs
     const agents = await prisma.agent.findMany({
       include: {
@@ -40,6 +42,14 @@ export async function runGovernanceLoopOnce() {
       }
     }
 
+    // 2. Run Evolution Cycle (Survival of the Fittest)
+    // Run cycle for 'global' population
+    try {
+      await evolutionCycleService.runCycle('global');
+    } catch (evoErr) {
+       console.error(`[HeadAgent] Error in evolution cycle:`, evoErr);
+    }
+
     console.log("[HeadAgent] Governance loop finished.");
   } catch (error) {
     console.error("[HeadAgent] Critical error in governance loop:", error);
@@ -54,9 +64,7 @@ async function evaluateAgent(agent: any) {
 
   // Skip if not enough data
   if (logs.length < MIN_TASKS_FOR_EVAL) {
-    console.log(
-      `[HeadAgent] Skipping agent ${agent.id} - insufficient data (${logs.length} tasks)`
-    );
+    // Silent skip to avoid log spam
     return;
   }
 
@@ -134,8 +142,8 @@ export function startGovernanceLoop() {
   // Run immediately
   runGovernanceLoopOnce();
 
-  // Then run every 5 minutes (300000 ms)
+  // Run every 60 seconds (1 minute) for faster evolution in this phase
   setInterval(() => {
     runGovernanceLoopOnce();
-  }, 300000);
+  }, 60000);
 }
