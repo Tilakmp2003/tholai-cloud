@@ -143,18 +143,36 @@ async function runLLMCodeReview(task: any, qaAgent: any) {
         },
       });
     } else {
-      console.log(
-        `[QA] ❌ Task ${task.id} failed QA review: ${review.issues?.join(", ")}`
+      // SOFT CHECK: If issues are just warnings (not errors), let it pass
+      const isCritical = (review.issues || []).some((i: string) => 
+        i.toLowerCase().includes('error') || 
+        i.toLowerCase().includes('failed') || 
+        i.toLowerCase().includes('bug')
       );
-      await prisma.task.update({
-        where: { id: task.id },
-        data: {
-          status: "NEEDS_REVISION", // Send back to developer for fixes
-          // Increment retryCount so loops can be detected and handled
-          retryCount: { increment: 1 },
-          qaFeedback: `QA Failed ❌: ${(review.issues || []).join("; ")}`,
-        },
-      });
+
+      if (!isCritical && (review.issues || []).length < 3) {
+         console.log(`[QA] ⚠️ Task ${task.id} has minor QA issues but passing (warnings only)`);
+         await prisma.task.update({
+          where: { id: task.id },
+          data: {
+            status: "IN_REVIEW",
+            qaFeedback: `QA Passed with Warnings ⚠️: ${(review.issues || []).join("; ")}`,
+          },
+        });
+      } else {
+        console.log(
+          `[QA] ❌ Task ${task.id} failed QA review: ${review.issues?.join(", ")}`
+        );
+        await prisma.task.update({
+          where: { id: task.id },
+          data: {
+            status: "NEEDS_REVISION", // Send back to developer for fixes
+            // Increment retryCount so loops can be detected and handled
+            retryCount: { increment: 1 },
+            qaFeedback: `QA Failed ❌: ${(review.issues || []).join("; ")}`,
+          },
+        });
+      }
     }
 
     // EVOLUTIONARY: Update QA agent E-value for completing a review

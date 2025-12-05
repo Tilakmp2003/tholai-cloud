@@ -456,8 +456,16 @@ export async function runSeniorDevAgentOnce() {
           tasks: {
             some: {
               status: "COMPLETED",
-              // Only review if task was completed in last hour and not yet reviewed by SeniorDev
+              // Only review if task was completed in last hour
               updatedAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+              // STOP THE LOOP: Do not re-review "Fix" or "Improve" tasks
+              NOT: {
+                OR: [
+                  { title: { startsWith: "Fix errors" } },
+                  { title: { startsWith: "Improve" } },
+                  { title: { startsWith: "Code Review Report" } }
+                ]
+              }
             },
           },
         },
