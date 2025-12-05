@@ -159,4 +159,49 @@ router.post("/retry-all", async (req, res) => {
   }
 });
 
+// POST /api/admin/clean-db - WIPE EVERYTHING (Production Cleanup)
+router.post("/clean-db", async (req, res) => {
+  try {
+    console.log("🧹 Cleaning database...");
+    
+    // 1. Clean operational data
+    try { await (prisma as any).taskMetrics.deleteMany({}); } catch(e) {}
+    await prisma.trace.deleteMany({});
+    await prisma.task.deleteMany({});
+    await prisma.module.deleteMany({});
+    await prisma.project.deleteMany({});
+    
+    // 2. Clean old agents (keep only evo_*)
+    // We delete non-evo agents
+    const deletedAgents = await prisma.agent.deleteMany({
+      where: {
+        NOT: {
+          id: { startsWith: "evo_" }
+        }
+      }
+    });
+
+    // 3. Reset evo agents
+    await prisma.agent.updateMany({
+      where: { id: { startsWith: "evo_" } },
+      data: { status: "IDLE", currentTaskId: null, failCount: 0, successCount: 0 }
+    });
+
+    // 4. Re-seed if needed (if no agents left)
+    const agentCount = await prisma.agent.count();
+    if (agentCount === 0) {
+      console.log("No agents left, re-seeding...");
+      await seedAgents();
+    }
+
+    res.json({
+      success: true,
+      message: `Database cleaned. Deleted ${deletedAgents.count} old agents. System ready.`,
+    });
+  } catch (error: any) {
+    console.error("Clean DB failed:", error);
+    res.status(500).json({ error: "Failed to clean database: " + error.message });
+  }
+});
+
 export default router;

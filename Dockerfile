@@ -44,4 +44,5 @@ ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["node", "backend/dist/server.js"]
+# Run migrations then start server
+CMD ["sh", "-c", "cd backend && npx prisma migrate deploy && node dist/server.js"]
