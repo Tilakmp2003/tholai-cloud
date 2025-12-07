@@ -200,7 +200,24 @@ export function EnterpriseProjectWizard({
   } | null>(null);
 
   // Form state aggregator
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    clientName: string;
+    clientEmail: string;
+    clientPhone: string;
+    clientCompany: string;
+    industry: string;
+    name: string;
+    projectType: string;
+    description: string;
+    priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    deadline: string;
+    budget: string;
+    platform: string[];
+    features: string[];
+    integrations: string[];
+    securityLevel: "BASIC" | "STANDARD" | "ENTERPRISE" | "HIPAA_COMPLIANT";
+    scalability: "SMALL" | "MEDIUM" | "LARGE" | "ENTERPRISE";
+  }>({
     // Client
     clientName: "",
     clientEmail: "",
@@ -211,15 +228,15 @@ export function EnterpriseProjectWizard({
     name: "",
     projectType: "",
     description: "",
-    priority: "MEDIUM" as const,
+    priority: "MEDIUM",
     deadline: "",
     budget: "",
     // Technical
-    platform: [] as string[],
-    features: [] as string[],
-    integrations: [] as string[],
-    securityLevel: "STANDARD" as const,
-    scalability: "MEDIUM" as const,
+    platform: [],
+    features: [],
+    integrations: [],
+    securityLevel: "STANDARD",
+    scalability: "MEDIUM",
   });
 
   // Step validation
