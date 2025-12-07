@@ -42,13 +42,14 @@ export async function runGovernanceLoopOnce() {
       }
     }
 
-    // 2. Run Evolution Cycle (Survival of the Fittest)
-    // Run cycle for 'global' population
-    try {
-      await evolutionCycleService.runCycle('global');
-    } catch (evoErr) {
-       console.error(`[HeadAgent] Error in evolution cycle:`, evoErr);
-    }
+    // 2. DISABLED: Evolution Cycle - Population was growing too fast
+    // User plans to reimagine evolution for a different purpose
+    // try {
+    //   await evolutionCycleService.runCycle('global');
+    // } catch (evoErr) {
+    //    console.error(`[HeadAgent] Error in evolution cycle:`, evoErr);
+    // }
+    console.log("[HeadAgent] Evolution cycle is DISABLED");
 
     console.log("[HeadAgent] Governance loop finished.");
   } catch (error) {
