@@ -73,13 +73,13 @@ export class PhaseReportService {
       throw new Error(`Phase ${phaseId} not found`);
     }
 
-    const existingActivity = (phase.agentActivity as AgentActivityEntry[]) || [];
+    const existingActivity = (phase.agentActivity as unknown as AgentActivityEntry[]) || [];
     existingActivity.push(activity);
 
     await prisma.phaseReport.update({
       where: { id: phaseId },
       data: {
-        agentActivity: existingActivity,
+        agentActivity: existingActivity as unknown as any,
       },
     });
   }
@@ -231,7 +231,7 @@ export class PhaseReportService {
     const relevantActivity: AgentActivityEntry[] = [];
     
     for (const phase of phases) {
-      const activity = (phase.agentActivity as AgentActivityEntry[]) || [];
+      const activity = (phase.agentActivity as unknown as AgentActivityEntry[]) || [];
       
       for (const entry of activity) {
         if (file && entry.file === file) {
