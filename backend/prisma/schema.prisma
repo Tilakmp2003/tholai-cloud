@@ -32,6 +32,12 @@ model Project {
   modules     Module[]
   repo        Repo?
   generations Generation[]
+  
+  // Enterprise Workflow Relations
+  plans          ProjectPlan[]
+  phaseReports   PhaseReport[]
+  clientMessages ClientMessage[]
+  deployments    Deployment[]
 }
 
 // Claim 3: Immutable Context Artifacts (Vector DB Persistence)
@@ -609,3 +615,206 @@ model HallucinationCheck {
   @@index([taskId])
 }
 
+// ============================================
+// ENTERPRISE WORKFLOW: MNC-Style Project Management
+// ============================================
+
+// 30-page Industrial Implementation Plan with version control
+model ProjectPlan {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  version     String   // e.g. "1.0", "1.1", "2.0"
+  status      PlanStatus @default(DRAFT)
+  
+  // Plan content sections (JSON structure)
+  content     Json     // { executiveSummary, requirements, architecture, design, modules, timeline, risks, resources, testing, deployment }
+  
+  // Generated outputs
+  pdfUrl      String?  // S3 URL to generated PDF
+  wordCount   Int      @default(0)
+  pageCount   Int      @default(0)
+  
+  // Approval workflow
+  approvedAt  DateTime?
+  approvedBy  String?  // Client identifier
+  
+  // Revision tracking
+  parentPlanId String?  // Previous version
+  revisionNotes String? @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  phaseReports PhaseReport[]
+  
+  @@index([projectId])
+  @@index([projectId, version])
+}
+
+// Phase-based execution reports
+model PhaseReport {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  planId      String?
+  plan        ProjectPlan? @relation(fields: [planId], references: [id])
+  
+  phaseNumber Int      // 1, 2, 3, 4...
+  phaseName   String   // "Design", "Core Development", "Advanced Features", "Testing & QA"
+  status      PhaseStatus @default(NOT_STARTED)
+  
+  // Report content
+  summary     String?  @db.Text
+  tasksCompleted Int   @default(0)
+  tasksTotal  Int      @default(0)
+  
+  // Agent activity log (JSON array)
+  agentActivity Json?  // [{ agentId, agentRole, taskId, action, file, timestamp }]
+  
+  // Code changes summary
+  filesCreated  Int    @default(0)
+  filesModified Int    @default(0)
+  linesAdded    Int    @default(0)
+  linesRemoved  Int    @default(0)
+  
+  // Preview and visual proof
+  previewUrl    String?
+  screenshots   Json?  // [{ url, caption }]
+  
+  // Approval
+  approvedAt    DateTime?
+  approvedBy    String?
+  feedbackNotes String? @db.Text
+  
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([projectId])
+  @@index([projectId, phaseNumber])
+}
+
+// Client chat interface messages
+model ClientMessage {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  sender      MessageSender @default(CLIENT)
+  senderName  String?  // Display name
+  
+  content     String   @db.Text
+  
+  // Attachments (JSON array for files/images)
+  attachments Json?    // [{ type, url, name }]
+  
+  // For agent responses, link to the agent
+  agentId     String?
+  agentRole   String?
+  
+  // Message context
+  replyToId   String?  // For threaded replies
+  planVersion String?  // Which plan version this relates to
+  phaseNumber Int?     // Which phase this relates to
+  
+  // Processing status (for change requests)
+  isChangeRequest Boolean @default(false)
+  changeStatus    ChangeRequestStatus?
+  resolvedAt      DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([projectId])
+  @@index([projectId, createdAt])
+}
+
+// Enhanced deployment tracking
+model Deployment {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  type        DeploymentType // PREVIEW, STAGING, PRODUCTION
+  target      DeploymentTarget // AMPLIFY, APP_RUNNER, VERCEL, CUSTOM
+  
+  status      DeploymentStatus @default(PENDING)
+  
+  // URLs
+  url         String?
+  customDomain String?
+  
+  // AWS specific
+  amplifyAppId    String?
+  appRunnerServiceId String?
+  
+  // Build info
+  buildLogs   String?  @db.Text
+  buildDuration Int?   // seconds
+  
+  // Error handling
+  errorMessage String?
+  
+  deployedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([projectId])
+  @@index([projectId, type])
+}
+
+// Enums for enterprise workflow
+enum PlanStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SUPERSEDED
+  REJECTED
+}
+
+enum PhaseStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  PENDING_APPROVAL
+  APPROVED
+  NEEDS_REVISION
+}
+
+enum MessageSender {
+  CLIENT
+  SYSTEM
+  AGENT
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum DeploymentType {
+  PREVIEW
+  STAGING
+  PRODUCTION
+}
+
+enum DeploymentTarget {
+  AMPLIFY
+  APP_RUNNER
+  VERCEL
+  CLOUDFLARE
+  CUSTOM
+}
+
+enum DeploymentStatus {
+  PENDING
+  BUILDING
+  DEPLOYING
+  DEPLOYED
+  FAILED
+  STOPPED
+}

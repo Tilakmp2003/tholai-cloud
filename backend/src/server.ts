@@ -15,6 +15,10 @@ import adminRoutes from "./routes/admin";
 import reviewsRouter from "./routes/reviews";
 import auditRouter from "./routes/audit";
 import evolutionRouter from "./routes/evolutionRoutes";
+import plansRouter from "./routes/plans";
+import messagesRouter from "./routes/messages";
+import phasesRouter from "./routes/phases";
+import deploymentRouter from "./routes/deployment";
 import { initializeWebSocket } from "./websocket/socketServer";
 import { memoryRetention } from "./services/memoryRetention";
 import { createProxyMiddleware } from "http-proxy-middleware";
@@ -132,6 +136,11 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewsRouter);
 app.use("/api/audit", auditRouter);
 app.use("/api/evolution", evolutionRouter);
+// Enterprise Workflow Routes
+app.use("/api/projects", plansRouter); // Plan management nested under projects
+app.use("/api/projects", messagesRouter); // Client messages nested under projects
+app.use("/api/projects", phasesRouter); // Phase reports nested under projects
+app.use("/api/projects", deploymentRouter); // Deployment nested under projects
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

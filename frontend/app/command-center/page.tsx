@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useWebSocket } from "@/providers/WebSocketProvider";
-import { CreateProjectModal } from "@/components/CreateProjectModal";
+import { EnterpriseProjectWizard } from "@/components/EnterpriseProjectWizard";
 
 export default function CommandCenterPage() {
   const {
@@ -223,7 +223,7 @@ export default function CommandCenterPage() {
         </motion.div>
       </div>
 
-      <CreateProjectModal
+      <EnterpriseProjectWizard
         open={showNewProject}
         onOpenChange={setShowNewProject}
       />
